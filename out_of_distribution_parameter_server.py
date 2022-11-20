@@ -396,6 +396,7 @@ if __name__ == '__main__':
         ood_test_loader = ood_rank_loaders['test']
          
         print('loaders done, starting training...')
+        ma
         p = mp.Process(
             target=run_worker,
             args=(
