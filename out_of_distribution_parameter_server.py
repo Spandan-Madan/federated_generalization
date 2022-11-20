@@ -48,7 +48,7 @@ DATASET_NAMES = ['mnist_rotation_one_by_nine', 'mnist_rotation_three_by_nine',
                  'mnist_rotation_six_by_nine']
 OOD_DATASET_NAME = 'mnist_rotation_nine_by_nine'
 NUM_EPOCHS = 10
-BATCH_SIZE = 20
+BATCH_SIZE = 4
 ARCH = 'LATE_BRANCHING_COMBINED'
 
 image_transform=transforms.Compose([
@@ -98,8 +98,8 @@ class Net(nn.Module):
             "cuda:0" if torch.cuda.is_available() and self.num_gpus > 0 else "cpu")
         print(f"Putting first 2 convs on {str(device)}")
         # Put conv layers on the first cuda device, or CPU if no cuda device
-        self.conv1 = nn.Conv2d(1, 32, 3, 1).to(device)
-        self.conv2 = nn.Conv2d(32, 64, 3, 1).to(device)
+        self.conv1 = nn.Conv2d(3, 28, 3, 1).to(device)
+        self.conv2 = nn.Conv2d(28, 64, 3, 1).to(device)
         # Put rest of the network on the 2nd cuda device, if there is one
         if "cuda" in str(device) and num_gpus > 1:
             device = torch.device("cuda:1")
@@ -269,7 +269,8 @@ def get_accuracy(test_loader, model):
     device = torch.device("cuda:0" if model.num_gpus > 0
         and torch.cuda.is_available() else "cpu")
     with torch.no_grad():
-        for i, (data, target) in enumerate(test_loader):
+        for i, (data, target, paths) in enumerate(test_loader):
+            target = target[3]
             out = model(data)
             pred = out.argmax(dim=1, keepdim=True)
             pred, target = pred.to(device), target.to(device)
@@ -285,12 +286,13 @@ def run_training_loop(rank, num_gpus, train_loader, test_loader):
     # Build DistributedOptimizer.
     param_rrefs = net.get_global_param_rrefs()
     opt = DistributedOptimizer(optim.SGD, param_rrefs, lr=0.03)
-    for i, (data, target) in enumerate(train_loader):
+    for i, (data, target, paths) in enumerate(train_loader):
         '''
         generates a context cid for each worker for parameter to accumulate gradeients
         '''
         with dist_autograd.context() as cid:
             model_output = net(data)
+            target = target[3]
             target = target.to(model_output.device)
             loss = F.nll_loss(model_output, target)
             if i % 5 == 0:
