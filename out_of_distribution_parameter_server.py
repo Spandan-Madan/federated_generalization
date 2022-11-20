@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 import argparse
 import os
 import time
@@ -13,7 +14,7 @@ from torch import optim
 from torch.distributed.optim import DistributedOptimizer
 from torchvision import datasets, transforms
 
-from __future__ import print_function, division
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -31,16 +32,21 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 import argparse
 import pickle
 import sys
-sys.path.append('%s/res/'%CODE_ROOT)
+
+sys.path.append('./res/')
+# sys.path.append('./res/models/')
+# sys.path.append('./res/loader/')
 from models.models import get_model
 from loader.loader import get_loader
 
 
 ##### Details for different data loaders created ######
-CODE_ROOT = '.'
+CODE_ROOT = './'
+
+
 DATASET_NAMES = ['mnist_rotation_one_by_nine', 'mnist_rotation_three_by_nine',
                  'mnist_rotation_six_by_nine']
-OOD_DATASET_NAME = ['mnist_rotation_nine_by_nine']
+OOD_DATASET_NAME = 'mnist_rotation_nine_by_nine'
 NUM_EPOCHS = 10
 BATCH_SIZE = 20
 ARCH = 'LATE_BRANCHING_COMBINED'
@@ -386,17 +392,16 @@ if __name__ == '__main__':
         Other starts the worker process
         '''
         # Get data to train on
-        rank_dataset_name = DATASET_NAME[args.rank]
-        print('Building train + in-distribution test data loader from %s'%DATASET_NAME)
+        rank_dataset_name = DATASET_NAMES[args.rank]
+        print('Building train + in-distribution test data loader from %s'%rank_dataset_name)
         print('Building OOD test data loader from %s'%OOD_DATASET_NAME)
         
         rank_dset, rank_loaders, rank_dset_sizes = build_loaders_for_dataset(rank_dataset_name)
         ood_rank_dset, ood_rank_loaders, ood_rank_dset_sizes = build_loaders_for_dataset(OOD_DATASET_NAME)
-        train_loader, ind_test_loader = rank_loaders['train'], rank_loaderes['test']
+        train_loader, ind_test_loader = rank_loaders['train'], rank_loaders['test']
         ood_test_loader = ood_rank_loaders['test']
          
         print('loaders done, starting training...')
-        ma
         p = mp.Process(
             target=run_worker,
             args=(
