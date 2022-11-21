@@ -262,6 +262,13 @@ class TrainerNet(nn.Module):
             ParameterServer.forward, self.param_server_rref, x)
         return model_output
 
+from threading import Condition
+trainer_cv = Condition()
+def set_cv():
+    global trainer_cv
+    with trainer_cv:
+        trainer_cv.notify()
+
 def get_accuracy(test_loader, model):
     model.eval()
     correct_sum = 0
@@ -291,6 +298,9 @@ def run_training_loop(rank, num_gpus, train_loader, test_loader):
         generates a context cid for each worker for parameter to accumulate gradeients
         '''
         with dist_autograd.context() as cid:
+            if rank == 1:
+                with trainer_cv:
+                    trainer_cv.wait()
             model_output = net(data)
             target = target[3]
             target = target.to(model_output.device)
@@ -307,11 +317,16 @@ def run_training_loop(rank, num_gpus, train_loader, test_loader):
             dist_autograd.backward(cid, [loss])
             # Ensure that dist autograd ran successfully and gradients were
             # returned.
-            assert remote_method(
-                ParameterServer.get_dist_gradients,
-                net.param_server_rref,
-                cid) != {}
             opt.step(cid)
+        # after rank 2 is done with 1 iter, it notifies rank 1
+        if rank == 2:
+            rpc.rpc_sync("trainer_1", set_cv, args=())
+            # rank 0 waits for rank 1 to finish.
+            with trainer_cv:
+                trainer_cv.wait()
+        # rank 1 has finished, let rank 2 stop waiting.
+        if rank == 1:
+            rpc.rpc_sync("trainer_2", set_cv, args=())
 
     print("Training complete!")
     print("Getting accuracy....")
