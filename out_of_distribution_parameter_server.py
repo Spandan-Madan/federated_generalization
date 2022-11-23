@@ -346,7 +346,7 @@ def run_training_loop(rank, world_size, num_gpus, train_loader, test_loader, cor
                 #### CORRUPTION TO BE IMPLEMENTED ####
                 # print(f"Rank {rank} got corrupted. Random loss used")
                 # print(cid)
-                # dist_autograd.backward(cid, [loss])
+                dist_autograd.backward(cid, [loss])
             else:
                 dist_autograd.backward(cid, [loss])
             # wait_all_trainers(rank=rank, world_size=world_size)
