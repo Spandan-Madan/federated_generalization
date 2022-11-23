@@ -3,7 +3,6 @@ import argparse
 import os
 import time
 from threading import Lock
-
 import torch
 import torch.distributed.autograd as dist_autograd
 import torch.distributed.rpc as rpc
@@ -12,6 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import optim
 from torch.distributed.optim import DistributedOptimizer
+import torch.distributed as dist
 from torchvision import datasets, transforms
 
 
@@ -27,7 +27,7 @@ import time
 import copy
 import os
 from PIL import ImageFile
-import random
+from random import random
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 import argparse
 import pickle
@@ -58,6 +58,31 @@ image_transform=transforms.Compose([
 
 
 GPU = 1
+
+TERMINATE_AT_ITER = None  # for early stopping when debugging
+NUM_TRAINERS_WAITED = 0
+num_trainers_waited_lock = Lock()
+
+def trainer_arrived():
+    with num_trainers_waited_lock:
+        global NUM_TRAINERS_WAITED
+        NUM_TRAINERS_WAITED += 1
+
+def wait_all_trainers(rank, world_size):
+    global NUM_TRAINERS_WAITED
+    # Send RPC to all other trainers (non-zero ranks)
+    for i in range(world_size):
+        if i != rank and i != 0:
+            rpc.rpc_sync(f"trainer_{i}", trainer_arrived, args=())
+    # Wait for all trainers to arrive
+    with num_trainers_waited_lock:
+        cur_num_trainers = NUM_TRAINERS_WAITED
+
+    if cur_num_trainers != world_size - 1:
+        time.sleep(0.01)
+        with num_trainers_waited_lock:
+            cur_num_trainers = NUM_TRAINERS_WAITED
+
 
 
 NUM_CLASSES = (10,10,10,10)
@@ -286,7 +311,7 @@ def get_accuracy(test_loader, model):
 
     print(f"Accuracy {correct_sum / len(test_loader.dataset)}")
 
-def run_training_loop(rank, num_gpus, train_loader, test_loader):
+def run_training_loop(rank, world_size, num_gpus, train_loader, test_loader, corruption_rate):
     # Runs the typical nueral network forward + backward + optimizer step, but
     # in a distributed fashion.
     net = TrainerNet(num_gpus=num_gpus)
@@ -294,46 +319,40 @@ def run_training_loop(rank, num_gpus, train_loader, test_loader):
     param_rrefs = net.get_global_param_rrefs()
     opt = DistributedOptimizer(optim.SGD, param_rrefs, lr=0.03)
     for i, (data, target, paths) in enumerate(train_loader):
+        if TERMINATE_AT_ITER is not None and i == TERMINATE_AT_ITER:
+            break
         '''
         generates a context cid for each worker for parameter to accumulate gradeients
         '''
         with dist_autograd.context() as cid:
-            if rank == 1:
-                with trainer_cv:
-                    trainer_cv.wait()
             model_output = net(data)
             target = target[3]
             target = target.to(model_output.device)
             loss = F.nll_loss(model_output, target)
             if i % 5 == 0:
                 print(f"Rank {rank} training batch {i} loss {loss.item()}")
-
+            wait_all_trainers(rank, world_size)
             '''
             # Run the backward pass.
             dist_autograd.backward(context_id, [loss])
             # Retrieve the gradients from the context.
             dist_autograd.get_gradients(context_id)
             '''
+            if random() < corruption_rate:
+                print(f"Rank {rank} got corrupted. Skipping update")
+                continue
             dist_autograd.backward(cid, [loss])
+            wait_all_trainers(rank=rank, world_size=world_size)
             # Ensure that dist autograd ran successfully and gradients were
             # returned.
             opt.step(cid)
-        # after rank 2 is done with 1 iter, it notifies rank 1
-        if rank == 2:
-            rpc.rpc_sync("trainer_1", set_cv, args=())
-            # rank 0 waits for rank 1 to finish.
-            with trainer_cv:
-                trainer_cv.wait()
-        # rank 1 has finished, let rank 2 stop waiting.
-        if rank == 1:
-            rpc.rpc_sync("trainer_2", set_cv, args=())
-
+            wait_all_trainers(rank=rank, world_size=world_size)
     print("Training complete!")
     print("Getting accuracy....")
     get_accuracy(test_loader, net)
 
 # Main loop for trainers.
-def run_worker(rank, world_size, num_gpus, train_loader, test_loader):
+def run_worker(rank, world_size, num_gpus, train_loader, test_loader, corruption_rate):
     print(f"Worker rank {rank} initializing RPC")
 
     '''
@@ -349,7 +368,7 @@ def run_worker(rank, world_size, num_gpus, train_loader, test_loader):
 
     print(f"Worker {rank} done initializing RPC")
 
-    run_training_loop(rank, num_gpus, train_loader, test_loader)
+    run_training_loop(rank, world_size, num_gpus, train_loader, test_loader, corruption_rate)
     rpc.shutdown()
 
 
@@ -386,6 +405,14 @@ if __name__ == '__main__':
         help="""Port that master is listening on, will default to 29500 if not
         provided. Master must be able to accept network traffic on the host and port.""")
 
+    parser.add_argument(
+        "--corruption_rate",
+        type=float,
+        default= 0.0,
+        help="""Corruption rate for all the workers. If corruption rate is 0.0, then there 
+        won't be any corruption. Otherwise, each worker will have the corruption rate chance
+        to drop the gradient update.""")
+
     args = parser.parse_args()
     assert args.rank is not None, "must provide rank argument."
     assert args.num_gpus <= 3, f"Only 0-2 GPUs currently supported (got {args.num_gpus})."
@@ -409,7 +436,7 @@ if __name__ == '__main__':
         Other starts the worker process
         '''
         # Get data to train on
-        rank_dataset_name = DATASET_NAMES[args.rank]
+        rank_dataset_name = DATASET_NAMES[args.rank-1]
         print('Building train + in-distribution test data loader from %s'%rank_dataset_name)
         print('Building OOD test data loader from %s'%OOD_DATASET_NAME)
         
@@ -425,7 +452,7 @@ if __name__ == '__main__':
                 args.rank,
                 world_size, args.num_gpus,
                 train_loader,
-                ood_test_loader))
+                ood_test_loader, args.corruption_rate))
         p.start()
         processes.append(p)
 
