@@ -3,7 +3,7 @@ import argparse
 import os
 import time
 from threading import Lock
-
+from random import random
 import torch
 import torch.distributed.autograd as dist_autograd
 import torch.distributed.rpc as rpc
@@ -312,7 +312,7 @@ def get_accuracy(test_loader, model):
 
     print(f"Accuracy {correct_sum / len(test_loader.dataset)}")
 
-def run_training_loop(rank, world_size, num_gpus, train_loader, test_loader):
+def run_training_loop(rank, world_size, num_gpus, train_loader, test_loader, corruption_rate):
     # Runs the typical nueral network forward + backward + optimizer step, but
     # in a distributed fashion.
     net = TrainerNet(num_gpus=num_gpus)
@@ -326,6 +326,9 @@ def run_training_loop(rank, world_size, num_gpus, train_loader, test_loader):
         generates a context cid for each worker for parameter to accumulate gradeients
         '''
         with dist_autograd.context() as cid:
+            if rank == 1:
+                with trainer_cv:
+                    trainer_cv.wait()
             model_output = net(data)
             target = target[3]
             target = target.to(model_output.device)
@@ -339,6 +342,9 @@ def run_training_loop(rank, world_size, num_gpus, train_loader, test_loader):
             # Retrieve the gradients from the context.
             dist_autograd.get_gradients(context_id)
             '''
+            if random() < corruption_rate:
+                print(f"Rank {rank} got corrupted. Skipping update")
+                continue
             dist_autograd.backward(cid, [loss])
             wait_all_trainers(rank=rank, world_size=world_size)
             # Ensure that dist autograd ran successfully and gradients were
@@ -350,7 +356,7 @@ def run_training_loop(rank, world_size, num_gpus, train_loader, test_loader):
     get_accuracy(test_loader, net)
 
 # Main loop for trainers.
-def run_worker(rank, world_size, num_gpus, train_loader, test_loader):
+def run_worker(rank, world_size, num_gpus, train_loader, test_loader, corruption_rate):
     print(f"Worker rank {rank} initializing RPC")
 
     '''
@@ -366,7 +372,7 @@ def run_worker(rank, world_size, num_gpus, train_loader, test_loader):
 
     print(f"Worker {rank} done initializing RPC")
 
-    run_training_loop(rank, world_size, num_gpus, train_loader, test_loader)
+    run_training_loop(rank, world_size, num_gpus, train_loader, test_loader, corruption_rate)
     rpc.shutdown()
 
 
@@ -402,6 +408,14 @@ if __name__ == '__main__':
         default="29500",
         help="""Port that master is listening on, will default to 29500 if not
         provided. Master must be able to accept network traffic on the host and port.""")
+
+    parser.add_argument(
+        "--corruption_rate",
+        type=float,
+        default= 0.0,
+        help="""Corruption rate for all the workers. If corruption rate is 0.0, then there 
+        won't be any corruption. Otherwise, each worker will have the corruption rate chance
+        to drop the gradient update.""")
 
     args = parser.parse_args()
     assert args.rank is not None, "must provide rank argument."
@@ -442,7 +456,7 @@ if __name__ == '__main__':
                 args.rank,
                 world_size, args.num_gpus,
                 train_loader,
-                ood_test_loader))
+                ood_test_loader, args.corruption_rate))
         p.start()
         processes.append(p)
 
