@@ -318,6 +318,9 @@ def run_training_loop(rank, world_size, num_gpus, train_loader, test_loader, cor
     net = TrainerNet(num_gpus=num_gpus)
     # Build DistributedOptimizer.
     param_rrefs = net.get_global_param_rrefs()
+    # corrupted_cutoff = int(corruption_rate*len(param_rrefs))
+    # param_rrefs = param_rrefs[corrupted_cutoff:]
+    # print(param_rrefs)
     opt = DistributedOptimizer(optim.SGD, param_rrefs, lr=0.03)
     for i, (data, target, paths) in enumerate(train_loader):
         if TERMINATE_AT_ITER is not None and i == TERMINATE_AT_ITER:
@@ -342,16 +345,18 @@ def run_training_loop(rank, world_size, num_gpus, train_loader, test_loader, cor
             # Retrieve the gradients from the context.
             dist_autograd.get_gradients(context_id)
             '''
-            if random.random() < corruption_rate:
-                #### CORRUPTION TO BE IMPLEMENTED ####
-                # print(f"Rank {rank} got corrupted. Random loss used")
-                # print(cid)
-                dist_autograd.backward(cid, [loss])
-            else:
-                dist_autograd.backward(cid, [loss])
-            # wait_all_trainers(rank=rank, world_size=world_size)
-            # Ensure that dist autograd ran successfully and gradients were
-            # returned.
+            dist_autograd.backward(cid, [loss])
+            # if random.random() < corruption_rate:
+            #     machine_grads = dist_autograd.get_gradients(cid)
+            #     #### CORRUPTION TO BE IMPLEMENTED ####
+            #     # print(f"Rank {rank} got corrupted. Random loss used")
+            #     # print(cid)
+            #
+            # else:
+            #     dist_autograd.backward(cid, [loss])
+            # # wait_all_trainers(rank=rank, world_size=world_size)
+            # # Ensure that dist autograd ran successfully and gradients were
+            # # returned.
             opt.step(cid)
         if rank == 2:
             rpc.rpc_sync("trainer_1", set_cv, args=())
