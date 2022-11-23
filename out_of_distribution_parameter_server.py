@@ -287,13 +287,6 @@ class TrainerNet(nn.Module):
             ParameterServer.forward, self.param_server_rref, x)
         return model_output
 
-from threading import Condition
-trainer_cv = Condition()
-def set_cv():
-    global trainer_cv
-    with trainer_cv:
-        trainer_cv.notify()
-
 def get_accuracy(test_loader, model):
     model.eval()
     correct_sum = 0
@@ -331,7 +324,6 @@ def run_training_loop(rank, world_size, num_gpus, train_loader, test_loader, cor
             loss = F.nll_loss(model_output, target)
             if i % 5 == 0:
                 print(f"Rank {rank} training batch {i} loss {loss.item()}")
-            wait_all_trainers(rank, world_size)
             '''
             # Run the backward pass.
             dist_autograd.backward(context_id, [loss])
