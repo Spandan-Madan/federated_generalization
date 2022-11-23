@@ -3,7 +3,6 @@ import argparse
 import os
 import time
 from threading import Lock
-from random import random
 import torch
 import torch.distributed.autograd as dist_autograd
 import torch.distributed.rpc as rpc
@@ -28,7 +27,7 @@ import time
 import copy
 import os
 from PIL import ImageFile
-import random
+from random import random
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 import argparse
 import pickle
@@ -326,9 +325,6 @@ def run_training_loop(rank, world_size, num_gpus, train_loader, test_loader, cor
         generates a context cid for each worker for parameter to accumulate gradeients
         '''
         with dist_autograd.context() as cid:
-            if rank == 1:
-                with trainer_cv:
-                    trainer_cv.wait()
             model_output = net(data)
             target = target[3]
             target = target.to(model_output.device)
