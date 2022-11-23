@@ -14,7 +14,6 @@ from torch.distributed.optim import DistributedOptimizer
 import torch.distributed as dist
 from torchvision import datasets, transforms
 
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -105,9 +104,9 @@ def build_loaders_for_dataset(DATASET_NAME):
         dsets[phase] = loader_new(file_lists[phase],att_path, image_transform, data_dir)
         dset_loaders[phase] = torch.utils.data.DataLoader(dsets[phase], batch_size=BATCH_SIZE, shuffle = shuffles[phase], num_workers=2,drop_last=True)
         dset_sizes[phase] = len(dsets[phase])
-    return dsets, dset_loaders, dset_sizes    
-    
-    
+    return dsets, dset_loaders, dset_sizes
+
+
 
 # --------- MNIST Network to train, from pytorch/examples -----
 '''
@@ -191,6 +190,7 @@ def remote_method(method, rref, *args, **kwargs):
 # --------- Parameter Server --------------------
 class ParameterServer(nn.Module):
     def __init__(self, num_gpus=0):
+        torch.autograd.set_detect_anomaly(True)
         super().__init__()
         model = Net(num_gpus=num_gpus)
         self.model = model
@@ -310,6 +310,9 @@ def run_training_loop(rank, world_size, num_gpus, train_loader, test_loader, cor
     net = TrainerNet(num_gpus=num_gpus)
     # Build DistributedOptimizer.
     param_rrefs = net.get_global_param_rrefs()
+    # corrupted_cutoff = int(corruption_rate*len(param_rrefs))
+    # param_rrefs = param_rrefs[corrupted_cutoff:]
+    # print(param_rrefs)
     opt = DistributedOptimizer(optim.SGD, param_rrefs, lr=0.03)
     for i, (data, target, paths) in enumerate(train_loader):
         if TERMINATE_AT_ITER is not None and i == TERMINATE_AT_ITER:
@@ -330,9 +333,6 @@ def run_training_loop(rank, world_size, num_gpus, train_loader, test_loader, cor
             # Retrieve the gradients from the context.
             dist_autograd.get_gradients(context_id)
             '''
-            if random() < corruption_rate:
-                print(f"Rank {rank} got corrupted. Skipping update")
-                continue
             dist_autograd.backward(cid, [loss])
             wait_all_trainers(rank=rank, world_size=world_size)
             # Ensure that dist autograd ran successfully and gradients were
@@ -401,7 +401,7 @@ if __name__ == '__main__':
         "--corruption_rate",
         type=float,
         default= 0.0,
-        help="""Corruption rate for all the workers. If corruption rate is 0.0, then there 
+        help="""Corruption rate for all the workers. If corruption rate is 0.0, then there
         won't be any corruption. Otherwise, each worker will have the corruption rate chance
         to drop the gradient update.""")
 
@@ -431,12 +431,12 @@ if __name__ == '__main__':
         rank_dataset_name = DATASET_NAMES[args.rank-1]
         print('Building train + in-distribution test data loader from %s'%rank_dataset_name)
         print('Building OOD test data loader from %s'%OOD_DATASET_NAME)
-        
+
         rank_dset, rank_loaders, rank_dset_sizes = build_loaders_for_dataset(rank_dataset_name)
         ood_rank_dset, ood_rank_loaders, ood_rank_dset_sizes = build_loaders_for_dataset(OOD_DATASET_NAME)
         train_loader, ind_test_loader = rank_loaders['train'], rank_loaders['test']
         ood_test_loader = ood_rank_loaders['test']
-         
+
         print('loaders done, starting training...')
         p = mp.Process(
             target=run_worker,
