@@ -14,7 +14,6 @@ from torch.distributed.optim import DistributedOptimizer
 import torch.distributed as dist
 from torchvision import datasets, transforms
 import ipdb
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -32,12 +31,10 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 import argparse
 import pickle
 import sys
+import ray
+sys.path.append(os.getcwd() + "/res")
 
-sys.path.append('./res/')
-# sys.path.append('./res/models/')
-# sys.path.append('./res/loader/')
-from models.models import get_model
-from loader.loader import get_loader
+from res.loader.loader import get_loader
 
 
 ##### Details for different data loaders created ######
@@ -59,32 +56,6 @@ image_transform=transforms.Compose([
 
 GPU = 1
 
-TERMINATE_AT_ITER = None  # for early stopping when debugging
-NUM_TRAINERS_WAITED = 0
-num_trainers_waited_lock = Lock()
-
-def trainer_arrived():
-    with num_trainers_waited_lock:
-        global NUM_TRAINERS_WAITED
-        NUM_TRAINERS_WAITED += 1
-
-def wait_all_trainers(rank, world_size):
-    global NUM_TRAINERS_WAITED
-    # Send RPC to all other trainers (non-zero ranks)
-    for i in range(world_size):
-        if i != rank and i != 0:
-            rpc.rpc_sync(f"trainer_{i}", trainer_arrived, args=())
-    # Wait for all trainers to arrive
-    with num_trainers_waited_lock:
-        cur_num_trainers = NUM_TRAINERS_WAITED
-
-    if cur_num_trainers != world_size - 1:
-        time.sleep(0.01)
-        with num_trainers_waited_lock:
-            cur_num_trainers = NUM_TRAINERS_WAITED
-
-
-
 NUM_CLASSES = (10,10,10,10)
 loader_new = get_loader('multi_attribute_loader_file_list_mnist_rotation')
 
@@ -94,6 +65,7 @@ att_path = '%s/dataset_lists/combined_attributes.p'%CODE_ROOT
 shuffles = {'train':True,'val':True,'test':False}
 
 data_dir = '%s/data/'%CODE_ROOT
+
 #### Function to build different data loaders ####
 def build_loaders_for_dataset(DATASET_NAME):
     file_lists = {}
@@ -114,29 +86,17 @@ def build_loaders_for_dataset(DATASET_NAME):
 Definition for Neural Networks. We could replace the architecture with our network design
 #TODO: Update the network architecture
 '''
-class Net(nn.Module):
-    def __init__(self, num_gpus=0):
-        super(Net, self).__init__()
-        print(f"Using {num_gpus} GPUs to train")
-        self.num_gpus = num_gpus
-        device = torch.device(
-            "cuda:0" if torch.cuda.is_available() and self.num_gpus > 0 else "cpu")
-        print(f"Putting first 2 convs on {str(device)}")
-        # Put conv layers on the first cuda device, or CPU if no cuda device
-        self.conv1 = nn.Conv2d(3, 28, 3, 1).to(device)
-        self.conv2 = nn.Conv2d(28, 64, 3, 1).to(device)
-        # Put rest of the network on the 2nd cuda device, if there is one
-        if "cuda" in str(device) and num_gpus > 1:
-            device = torch.device("cuda:1")
-        '''
-        The setup here only supports 0-2 gpus, can be extended if more available
-        '''
+class ConvNet(nn.Module):
+    """Small ConvNet for MNIST."""
 
-        print(f"Putting rest of layers on {str(device)}")
-        self.dropout1 = nn.Dropout2d(0.25).to(device)
-        self.dropout2 = nn.Dropout2d(0.5).to(device)
-        self.fc1 = nn.Linear(9216, 128).to(device)
-        self.fc2 = nn.Linear(128, 10).to(device)
+    def __init__(self):
+        super(ConvNet, self).__init__()
+        self.conv1 = nn.Conv2d(3, 28, 3, 1)
+        self.conv2 = nn.Conv2d(28, 64, 3, 1)
+        self.dropout1 = nn.Dropout2d(0.25)
+        self.dropout2 = nn.Dropout2d(0.5)
+        self.fc1 = nn.Linear(9216, 128)
+        self.fc2 = nn.Linear(128, 10)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -146,13 +106,6 @@ class Net(nn.Module):
 
         x = self.dropout1(x)
         x = torch.flatten(x, 1)
-        # Move tensor to next device if necessary
-        '''
-        This is necessary because we need to make sure the tensor we operate need to be on the same device
-        '''
-        next_device = next(self.fc1.parameters()).device
-        x = x.to(next_device)
-
         x = self.fc1(x)
         x = F.relu(x)
         x = self.dropout2(x)
@@ -160,325 +113,112 @@ class Net(nn.Module):
         output = F.log_softmax(x, dim=1)
         return output
 
+    def get_weights(self):
+        return {k: v.cpu() for k, v in self.state_dict().items()}
+
+    def set_weights(self, weights):
+        self.load_state_dict(weights)
+
+    def get_gradients(self):
+        grads = []
+        for p in self.parameters():
+            grad = None if p.grad is None else p.grad.data.cpu().numpy()
+            grads.append(grad)
+        return grads
+
+    def set_gradients(self, gradients):
+        for g, p in zip(gradients, self.parameters()):
+            if g is not None:
+                p.grad = torch.from_numpy(g)
 
 
+@ray.remote
+class ParameterServer(object):
+    def __init__(self, lr):
+        self.model = ConvNet()
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=lr)
+
+    def apply_gradients(self, *gradients):
+        summed_gradients = [
+            np.stack(gradient_zip).sum(axis=0) for gradient_zip in zip(*gradients)
+        ]
+        self.optimizer.zero_grad()
+        self.model.set_gradients(summed_gradients)
+        self.optimizer.step()
+        return self.model.get_weights()
+
+    def get_weights(self):
+        return self.model.get_weights()
 
 
-# --------- Helper Methods --------------------
+@ray.remote
+class DataWorker(object):
+    def __init__(self, train_data_loader, test_data_loader):
+        self.model = ConvNet()
+        self.train_data_loader = train_data_loader
+        self.test_data_loader = test_data_loader
+        self.data_iterator = iter(train_data_loader)
 
-# On the local node, call a method with first arg as the value held by the
-# RRef. Other args are passed in as arguments to the function called.
-# Useful for calling instance methods. method could be any matching function, including
-# class methods.
-def call_method(method, rref, *args, **kwargs):
-    return method(rref.local_value(), *args, **kwargs)
+    def compute_gradients(self, weights):
+        self.model.set_weights(weights)
+        try:
+            [data, target, _] = next(self.data_iterator)
+            target = target[3]
+        except StopIteration:  # When the epoch ends, start a new epoch.
+            self.data_iterator = iter(self.train_data_loader)
+            [data, target, _] = next(self.data_iterator)
+            target = target[3]
+        self.model.zero_grad()
+        output = self.model(data)
+        loss = F.nll_loss(output, target)
+        loss.backward()
+        return self.model.get_gradients()
 
-# Given an RRef, return the result of calling the passed in method on the value
-# held by the RRef. This call is done on the remote node that owns
-# the RRef and passes along the given argument.
-# Example: If the value held by the RRef is of type Foo, then
-# remote_method(Foo.bar, rref, arg1, arg2) is equivalent to calling
-# <foo_instance>.bar(arg1, arg2) on the remote node and getting the result
-# back.
-
-def remote_method(method, rref, *args, **kwargs):
-    args = [method, rref] + list(args)
-    '''
-    rpc.rpc_sync blocks the program until it gets the result from the remote machine
-    '''
-    return rpc.rpc_sync(rref.owner(), call_method, args=args, kwargs=kwargs)
-
-# --------- Parameter Server --------------------
-class ParameterServer(nn.Module):
-    def __init__(self, num_gpus=0):
-        torch.autograd.set_detect_anomaly(True)
-        super().__init__()
-        model = Net(num_gpus=num_gpus)
-        self.model = model
-        self.input_device = torch.device(
-            "cuda:0" if torch.cuda.is_available() and num_gpus > 0 else "cpu")
-    def forward(self, inp):
-        inp = inp.to(self.input_device)
-        out = self.model(inp)
-        # This output is forwarded over RPC, which as of 1.5.0 only accepts CPU tensors.
-        # Tensors must be moved in and out of GPU memory due to this.
-        out = out.to("cpu")
-        return out
-
-    # Use dist autograd to retrieve gradients accumulated for this model.
-    # Primarily used for verification.
-    def get_dist_gradients(self, cid):
-        '''
-        remote method called by workers
-        '''
-
-        grads = dist_autograd.get_gradients(cid)
-        # This output is forwarded over RPC, which as of 1.5.0 only accepts CPU tensors.
-        # Tensors must be moved in and out of GPU memory due to this.
-        cpu_grads = {}
-        for k, v in grads.items():
-            k_cpu, v_cpu = k.to("cpu"), v.to("cpu")
-            cpu_grads[k_cpu] = v_cpu
-        return cpu_grads
-
-    # Wrap local parameters in a RRef. Needed for building the
-    # DistributedOptimizer which optimizes paramters remotely.
-    def get_param_rrefs(self):
-        '''
-        return a reference of all the parameters in this model
-        so the distributed optimizer could use
-        '''
-        param_rrefs = [rpc.RRef(param) for param in self.model.parameters()]
-        return param_rrefs
-
-
-
-# The global parameter server instance.
-param_server = None
-# A lock to ensure we only have one parameter server.
-global_lock = Lock()
-
-
-def get_parameter_server(num_gpus=0):
-    """
-    Returns a singleton parameter server to all trainer processes
-    """
-    global param_server
-    # Ensure that we get only one handle to the ParameterServer.
-    with global_lock:
-        if not param_server:
-            # construct it once
-            param_server = ParameterServer(num_gpus=num_gpus)
-        return param_server
-
-def run_parameter_server(rank, world_size):
-    # The parameter server just acts as a host for the model and responds to
-    # requests from trainers.
-    # rpc.shutdown() will wait for all workers to complete by default, which
-    # in this case means that the parameter server will wait for all trainers
-    # to complete, and then exit.
-    print("PS master initializing RPC")
-    rpc.init_rpc(name="parameter_server", rank=rank, world_size=world_size)
-    print("RPC initialized! Running parameter server...")
-    rpc.shutdown()
-    print("RPC shutdown on parameter server.")
-
-'''
-TrainerNet is a class for trainers that consists of a singleton parameter server ref
-'''
-
-class TrainerNet(nn.Module):
-    def __init__(self, num_gpus=0):
-        super().__init__()
-        self.num_gpus = num_gpus
-        '''
-        get a reference to the parameter instance
-        '''
-        self.param_server_rref = rpc.remote(
-            "parameter_server", get_parameter_server, args=(num_gpus,))
-
-    def get_global_param_rrefs(self):
-        remote_params = remote_method(
-            ParameterServer.get_param_rrefs,
-            self.param_server_rref)
-        return remote_params
-
-    def forward(self, x):
-        model_output = remote_method(
-            ParameterServer.forward, self.param_server_rref, x)
-        return model_output
-
-from threading import Condition
-trainer_cv = Condition()
-def set_cv():
-    global trainer_cv
-    with trainer_cv:
-        trainer_cv.notify()
-
-def get_accuracy(test_loader, model):
+def evaluate(model, test_loader):
+    """Evaluates the accuracy of the model on a validation dataset."""
     model.eval()
-    correct_sum = 0
-    # Use GPU to evaluate if possible
-    device = torch.device("cuda:0" if model.num_gpus > 0
-        and torch.cuda.is_available() else "cpu")
+    correct = 0
+    total = 0
     with torch.no_grad():
-        for i, (data, target, paths) in enumerate(test_loader):
+        for batch_idx, (data, target, paths) in enumerate(test_loader):
+            # This is only set to finish evaluation faster.
             target = target[3]
-            out = model(data)
-            pred = out.argmax(dim=1, keepdim=True)
-            pred, target = pred.to(device), target.to(device)
-            correct = pred.eq(target.view_as(pred)).sum().item()
-            correct_sum += correct
+            outputs = model(data)
+            _, predicted = torch.max(outputs.data, 1)
+            total += target.size(0)
+            correct += (predicted == target).sum().item()
+    return 100.0 * correct / total
 
-    print(f"Accuracy {correct_sum / len(test_loader.dataset)}")
+if __name__ == "__main__":
+    num_workers = 3
+    iterations = 10000
+    print("Running Asynchronous Parameter Server Training.")
+    ray.init(ignore_reinit_error=True)
+    ps = ParameterServer.remote(1e-2)
+    ood_rank_dset, ood_rank_loaders, ood_rank_dset_sizes = build_loaders_for_dataset(OOD_DATASET_NAME)
+    train_loader = ood_rank_loaders['train']
+    test_loader = ood_rank_loaders['test']
+    workers = [DataWorker.remote(train_loader, test_loader) for i in range(num_workers)]
+    current_weights = ps.get_weights.remote()
+    model = ConvNet()
+    gradients = {}
+    
+    for worker in workers:
+        gradients[worker.compute_gradients.remote(current_weights)] = worker
 
-def run_training_loop(rank, world_size, num_gpus, train_loader, test_loader, corruption_rate):
-    # Runs the typical nueral network forward + backward + optimizer step, but
-    # in a distributed fashion.
-    net = TrainerNet(num_gpus=num_gpus)
-    # Build DistributedOptimizer.
-    param_rrefs = net.get_global_param_rrefs()
-    # corrupted_cutoff = int(corruption_rate*len(param_rrefs))
-    # param_rrefs = param_rrefs[corrupted_cutoff:]
-    # print(param_rrefs)
-    opt = DistributedOptimizer(optim.SGD, param_rrefs, lr=0.03)
-    for i, (data, target, paths) in enumerate(train_loader):
-        if TERMINATE_AT_ITER is not None and i == TERMINATE_AT_ITER:
-            break
-        '''
-        generates a context cid for each worker for parameter to accumulate gradeients
-        '''
-        with dist_autograd.context() as cid:
-            if rank == 1:
-                with trainer_cv:
-                    trainer_cv.wait()
-            model_output = net(data)
-            target = target[3]
-            target = target.to(model_output.device)
-            loss = F.nll_loss(model_output, target)
-            if i % 5 == 0:
-                print(f"Rank {rank} training batch {i} loss {loss.item()}")
-            # wait_all_trainers(rank, world_size)
-            '''
-            # Run the backward pass.
-            dist_autograd.backward(context_id, [loss])
-            # Retrieve the gradients from the context.
-            dist_autograd.get_gradients(context_id)
-            '''
-            dist_autograd.backward(cid, [loss])
-            # if random.random() < corruption_rate:
-            #     machine_grads = dist_autograd.get_gradients(cid)
-            #     #### CORRUPTION TO BE IMPLEMENTED ####
-            #     # print(f"Rank {rank} got corrupted. Random loss used")
-            #     # print(cid)
-            #
-            # else:
-            #     dist_autograd.backward(cid, [loss])
-            # # wait_all_trainers(rank=rank, world_size=world_size)
-            # # Ensure that dist autograd ran successfully and gradients were
-            # # returned.
-            opt.step(cid)
-        if rank == 2:
-            rpc.rpc_sync("trainer_1", set_cv, args=())
-            with trainer_cv:
-                trainer_cv.wait()
-        if rank == 1:
-            rpc.rpc_sync("trainer_2", set_cv, args=())
-        # if rank == 2:
-        #     rpc.rpc_sync("trainer_1", set_cv, args=())
-        #     with trainer_cv:
-        #         trainer_cv.wait()
-        #  if rank == 1:
-             # rpc.rpc_sync("trainer_2", set_cv, args=())
-            # wait_all_trainers(rank=rank, world_size=world_size)
-    print("Training complete!")
-    print("Getting accuracy....")
-    get_accuracy(test_loader, net)
+    for i in range(iterations * num_workers):
+        ready_gradient_list, _ = ray.wait(list(gradients))
+        ready_gradient_id = ready_gradient_list[0]
+        worker = gradients.pop(ready_gradient_id)
 
-# Main loop for trainers.
-def run_worker(rank, world_size, num_gpus, train_loader, test_loader, corruption_rate):
-    print(f"Worker rank {rank} initializing RPC")
+        # Compute and apply gradients.
+        current_weights = ps.apply_gradients.remote(*[ready_gradient_id])
+        gradients[worker.compute_gradients.remote(current_weights)] = worker
 
-    '''
-    name (str) – a globally unique name of this node.
-    rank (int) – a globally unique id/rank of this node.
-    world_size (int) – The number of workers in the group.
-    '''
+        if i % 10 == 0:
+            # Evaluate the current model after every 10 updates.
+            model.set_weights(ray.get(current_weights))
+            accuracy = evaluate(model, test_loader)
+            print("Iter {}: \taccuracy is {:.1f}".format(i, accuracy))
 
-    rpc.init_rpc(
-        name=f"trainer_{rank}",
-        rank=rank,
-        world_size=world_size)
-
-    print(f"Worker {rank} done initializing RPC")
-
-    run_training_loop(rank, world_size, num_gpus, train_loader, test_loader, corruption_rate)
-    rpc.shutdown()
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description="Parameter-Server RPC based training")
-    parser.add_argument(
-        "--world_size",
-        type=int,
-        default=4,
-        help="""Total number of participating processes. Should be the sum of
-        master node and all training nodes.""")
-    parser.add_argument(
-        "--rank",
-        type=int,
-        default=None,
-        help="Global rank of this process. Pass in 0 for master.")
-    parser.add_argument(
-        "--num_gpus",
-        type=int,
-        default=0,
-        help="""Number of GPUs to use for training, Currently supports between 0
-         and 2 GPUs. Note that this argument will be passed to the parameter servers.""")
-    parser.add_argument(
-        "--master_addr",
-        type=str,
-        default="localhost",
-        help="""Address of master, will default to localhost if not provided.
-        Master must be able to accept network traffic on the address + port.""")
-    parser.add_argument(
-        "--master_port",
-        type=str,
-        default="29500",
-        help="""Port that master is listening on, will default to 29500 if not
-        provided. Master must be able to accept network traffic on the host and port.""")
-
-    parser.add_argument(
-        "--corruption_rate",
-        type=float,
-        default= 0.0,
-        help="""Corruption rate for all the workers. If corruption rate is 0.0, then there
-        won't be any corruption. Otherwise, each worker will have the corruption rate chance
-        to drop the gradient update.""")
-
-    args = parser.parse_args()
-    assert args.rank is not None, "must provide rank argument."
-    assert args.num_gpus <= 3, f"Only 0-2 GPUs currently supported (got {args.num_gpus})."
-    os.environ['MASTER_ADDR'] = args.master_addr
-    os.environ["MASTER_PORT"] = args.master_port
-
-
-    processes = []
-    world_size = args.world_size
-
-    mp.set_start_method("spawn")
-    if args.rank == 0:
-        '''
-        rank 0 starts the parameter server
-        '''
-        p = mp.Process(target=run_parameter_server, args=(0, world_size))
-        p.start()
-        processes.append(p)
-    else:
-        '''
-        Other starts the worker process
-        '''
-        # Get data to train on
-        rank_dataset_name = DATASET_NAMES[args.rank-1]
-        print('Building train + in-distribution test data loader from %s'%rank_dataset_name)
-        print('Building OOD test data loader from %s'%OOD_DATASET_NAME)
-
-        rank_dset, rank_loaders, rank_dset_sizes = build_loaders_for_dataset(rank_dataset_name)
-        ood_rank_dset, ood_rank_loaders, ood_rank_dset_sizes = build_loaders_for_dataset(OOD_DATASET_NAME)
-        train_loader, ind_test_loader = rank_loaders['train'], rank_loaders['test']
-        ood_test_loader = ood_rank_loaders['test']
-
-        print('loaders done, starting training...')
-        p = mp.Process(
-            target=run_worker,
-            args=(
-                args.rank,
-                world_size, args.num_gpus,
-                train_loader,
-                ood_test_loader, args.corruption_rate))
-        p.start()
-        processes.append(p)
-
-    for p in processes:
-        p.join()
+    print("Final accuracy is {:.1f}.".format(accuracy))
