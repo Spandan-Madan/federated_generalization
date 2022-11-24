@@ -32,6 +32,7 @@ import argparse
 import pickle
 import sys
 import ray
+import random
 sys.path.append(os.getcwd() + "/res")
 
 from res.loader.loader import get_loader
@@ -192,6 +193,7 @@ def evaluate(model, test_loader):
 if __name__ == "__main__":
     num_workers = 3
     iterations = 10000
+    corruption_rate = 0.2
     print("Running Asynchronous Parameter Server Training.")
     ray.init(ignore_reinit_error=True)
     ps = ParameterServer.remote(1e-2)
@@ -212,9 +214,11 @@ if __name__ == "__main__":
         worker = gradients.pop(ready_gradient_id)
 
         # Compute and apply gradients.
-        current_weights = ps.apply_gradients.remote(*[ready_gradient_id])
-        gradients[worker.compute_gradients.remote(current_weights)] = worker
-
+        if random.random() >= corruption_rate:
+            current_weights = ps.apply_gradients.remote(*[ready_gradient_id])
+            gradients[worker.compute_gradients.remote(current_weights)] = worker
+        else:
+            gradients[ready_gradient_id] = worker
         if i % 10 == 0:
             # Evaluate the current model after every 10 updates.
             model.set_weights(ray.get(current_weights))
