@@ -13,7 +13,7 @@ from torch import optim
 from torch.distributed.optim import DistributedOptimizer
 import torch.distributed as dist
 from torchvision import datasets, transforms
-import ipdb
+
 
 import torch
 import torch.nn as nn
@@ -27,13 +27,12 @@ import time
 import copy
 import os
 from PIL import ImageFile
-import random
+from random import random
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 import argparse
 import pickle
 import sys
-import torch.multiprocessing
-torch.multiprocessing.set_sharing_strategy('file_system')
+
 sys.path.append('./res/')
 # sys.path.append('./res/models/')
 # sys.path.append('./res/loader/')
@@ -45,11 +44,11 @@ from loader.loader import get_loader
 CODE_ROOT = './'
 
 
-DATASET_NAMES = ['mnist_rotation_one_by_nine', 'mnist_rotation_one_by_nine',
+DATASET_NAMES = ['mnist_rotation_one_by_nine', 'mnist_rotation_three_by_nine',
                  'mnist_rotation_six_by_nine']
 OOD_DATASET_NAME = 'mnist_rotation_nine_by_nine'
 NUM_EPOCHS = 10
-BATCH_SIZE = 100
+BATCH_SIZE = 4
 ARCH = 'LATE_BRANCHING_COMBINED'
 
 image_transform=transforms.Compose([
@@ -101,14 +100,14 @@ def build_loaders_for_dataset(DATASET_NAME):
     dsets = {}
     dset_loaders = {}
     dset_sizes = {}
-    for phase in ['train','val','test']:
+    for phase in ['train','test']:
         file_lists[phase] = "%s/%s_list_%s.txt"%(file_list_root,phase,DATASET_NAME)
         dsets[phase] = loader_new(file_lists[phase],att_path, image_transform, data_dir)
-        dset_loaders[phase] = torch.utils.data.DataLoader(dsets[phase], batch_size=BATCH_SIZE, shuffle = shuffles[phase], num_workers=1,drop_last=True)
+        dset_loaders[phase] = torch.utils.data.DataLoader(dsets[phase], batch_size=BATCH_SIZE, shuffle = shuffles[phase], num_workers=2,drop_last=True)
         dset_sizes[phase] = len(dsets[phase])
-    return dsets, dset_loaders, dset_sizes
-
-
+    return dsets, dset_loaders, dset_sizes    
+    
+    
 
 # --------- MNIST Network to train, from pytorch/examples -----
 '''
@@ -192,14 +191,8 @@ def remote_method(method, rref, *args, **kwargs):
 # --------- Parameter Server --------------------
 class ParameterServer(nn.Module):
     def __init__(self, num_gpus=0):
-        torch.autograd.set_detect_anomaly(True)
         super().__init__()
-        # model = Net(num_gpus=num_gpus)
-        model = torchvision.models.resnet18(pretrained = False)
-        num_final_in = model.fc.in_features
-        NUM_CLASSES = 10
-        model.fc = nn.Linear(num_final_in, NUM_CLASSES)
-
+        model = Net(num_gpus=num_gpus)
         self.model = model
         self.input_device = torch.device(
             "cuda:0" if torch.cuda.is_available() and num_gpus > 0 else "cpu")
@@ -294,13 +287,6 @@ class TrainerNet(nn.Module):
             ParameterServer.forward, self.param_server_rref, x)
         return model_output
 
-from threading import Condition
-trainer_cv = Condition()
-def set_cv():
-    global trainer_cv
-    with trainer_cv:
-        trainer_cv.notify()
-
 def get_accuracy(test_loader, model):
     model.eval()
     correct_sum = 0
@@ -309,21 +295,22 @@ def get_accuracy(test_loader, model):
         and torch.cuda.is_available() else "cpu")
     with torch.no_grad():
         for i, (data, target, paths) in enumerate(test_loader):
-            target = target[:,1]
+            target = target[3]
             out = model(data)
             pred = out.argmax(dim=1, keepdim=True)
             pred, target = pred.to(device), target.to(device)
             correct = pred.eq(target.view_as(pred)).sum().item()
             correct_sum += correct
+
     print(f"Accuracy {correct_sum / len(test_loader.dataset)}")
 
-
-def run_training_loop(net,rank, world_size, num_gpus, train_loader, test_loader, ood_test_loader, corruption_rate):
+def run_training_loop(rank, world_size, num_gpus, train_loader, test_loader, corruption_rate):
     # Runs the typical nueral network forward + backward + optimizer step, but
     # in a distributed fashion.
+    net = TrainerNet(num_gpus=num_gpus)
     # Build DistributedOptimizer.
     param_rrefs = net.get_global_param_rrefs()
-    # param_rrefs = param_rrefs[:10]
+    opt = DistributedOptimizer(optim.SGD, param_rrefs, lr=0.03)
     for i, (data, target, paths) in enumerate(train_loader):
         if TERMINATE_AT_ITER is not None and i == TERMINATE_AT_ITER:
             break
@@ -331,102 +318,33 @@ def run_training_loop(net,rank, world_size, num_gpus, train_loader, test_loader,
         generates a context cid for each worker for parameter to accumulate gradeients
         '''
         with dist_autograd.context() as cid:
-            if rank == 1:
-                with trainer_cv:
-                    trainer_cv.wait()
             model_output = net(data)
-            # print(target)
-            # print(target[:,3])
-            target = target[:,1]
-            # print('targets:%s'%target)
-            # print('paths:')
-            # print(paths)
+            target = target[3]
             target = target.to(model_output.device)
-            CE_loss = torch.nn.CrossEntropyLoss()
-            loss = CE_loss(model_output, target)
-
+            loss = F.nll_loss(model_output, target)
             if i % 5 == 0:
                 print(f"Rank {rank} training batch {i} loss {loss.item()}")
-            # wait_all_trainers(rank, world_size)
             '''
             # Run the backward pass.
             dist_autograd.backward(context_id, [loss])
             # Retrieve the gradients from the context.
             dist_autograd.get_gradients(context_id)
             '''
-            if random.random() < corruption_rate:
-                # loss = loss/100
-                # print('using prev cid %s'%prev_cid)
-                param_rrefs = net.get_global_param_rrefs()
-                param_rrefs = param_rrefs[:int(len(param_rrefs)/10)]
-                opt = DistributedOptimizer(optim.SGD, param_rrefs, lr=0.001)
-                dist_autograd.backward(cid, [loss])
-                # print(len(param_rrefs))
-            else:
-                param_rrefs = net.get_global_param_rrefs()
-                # print(len(param_rrefs))
-                opt = DistributedOptimizer(optim.SGD, param_rrefs, lr=0.001)
-                dist_autograd.backward(cid, [loss])
-                prev_cid = cid
+            if random() < corruption_rate:
+                print(f"Rank {rank} got corrupted. Skipping update")
+                continue
+            dist_autograd.backward(cid, [loss])
+            wait_all_trainers(rank=rank, world_size=world_size)
+            # Ensure that dist autograd ran successfully and gradients were
+            # returned.
             opt.step(cid)
-
-        if rank == 2:
-            rpc.rpc_sync("trainer_1", set_cv, args=())
-            # rpc.rpc_sync("trainer_3", set_cv, args=())
-            with trainer_cv:
-                trainer_cv.wait()
-        if rank == 3:
-            # rpc.rpc_sync("trainer_1", set_cv, args=())
-            rpc.rpc_sync("trainer_2", set_cv, args=())
-            # with trainer_cv:
-            #     trainer_cv.wait()
-            # rpc.rpc_sync("trainer_4", set_cv, args=())
-            # with trainer_cv:
-            #     trainer_cv.wait()
-
-        # if rank == 3:
-        #     rpc.rpc_sync("trainer_1", set_cv, args=())
-        #     with trainer_cv:
-        #         trainer_cv.wait()
-        #     rpc.rpc_sync("trainer_2", set_cv, args=())
-        #     with trainer_cv:
-        #         trainer_cv.wait()
-            # rpc.rpc_sync("trainer_4", set_cv, args=())
-            # with trainer_cv:
-            #     trainer_cv.wait()
-
-        # if rank == 4:
-        #     rpc.rpc_sync("trainer_1", set_cv, args=())
-        #     with trainer_cv:
-        #         trainer_cv.wait()
-        #     rpc.rpc_sync("trainer_2", set_cv, args=())
-        #     with trainer_cv:
-        #         trainer_cv.wait()
-        #     rpc.rpc_sync("trainer_3 ", set_cv, args=())
-        #     with trainer_cv:
-        #         trainer_cv.wait()
-
-        if rank == 1:
-            # rpc.rpc_sync("trainer_2", set_cv, args=())
-            rpc.rpc_sync("trainer_3", set_cv, args=())
-            # rpc.rpc_sync("trainer_4", set_cv, args=())
-
-        # if rank == 2:
-        #     rpc.rpc_sync("trainer_1", set_cv, args=())
-        #     with trainer_cv:
-        #         trainer_cv.wait()
-        #  if rank == 1:
-             # rpc.rpc_sync("trainer_2", set_cv, args=())
-            # wait_all_trainers(rank=rank, world_size=world_size)
+            wait_all_trainers(rank=rank, world_size=world_size)
     print("Training complete!")
     print("Getting accuracy....")
-    print('In-D accuracy...')
     get_accuracy(test_loader, net)
-    print('OOD accuracy...')
-    get_accuracy(ood_test_loader ,net)
 
 # Main loop for trainers.
-def run_worker(rank, world_size, num_gpus, train_loader, test_loader, ood_test_loader, corruption_rate, num_epochs):
+def run_worker(rank, world_size, num_gpus, train_loader, test_loader, corruption_rate):
     print(f"Worker rank {rank} initializing RPC")
 
     '''
@@ -441,10 +359,8 @@ def run_worker(rank, world_size, num_gpus, train_loader, test_loader, ood_test_l
         world_size=world_size)
 
     print(f"Worker {rank} done initializing RPC")
-    net = TrainerNet(num_gpus=num_gpus)
-    for epoch_num in range(num_epochs):
-        print('Starting Epoch:%s'%epoch_num)
-        run_training_loop(net,rank, world_size, num_gpus, train_loader, test_loader, ood_test_loader, corruption_rate)
+
+    run_training_loop(rank, world_size, num_gpus, train_loader, test_loader, corruption_rate)
     rpc.shutdown()
 
 
@@ -485,15 +401,9 @@ if __name__ == '__main__':
         "--corruption_rate",
         type=float,
         default= 0.0,
-        help="""Corruption rate for all the workers. If corruption rate is 0.0, then there
+        help="""Corruption rate for all the workers. If corruption rate is 0.0, then there 
         won't be any corruption. Otherwise, each worker will have the corruption rate chance
         to drop the gradient update.""")
-
-    parser.add_argument(
-        "--num_epochs",
-        type=int,
-        default= 10,
-        help="""Number of epochs agents should be trained""")
 
     args = parser.parse_args()
     assert args.rank is not None, "must provide rank argument."
@@ -521,24 +431,20 @@ if __name__ == '__main__':
         rank_dataset_name = DATASET_NAMES[args.rank-1]
         print('Building train + in-distribution test data loader from %s'%rank_dataset_name)
         print('Building OOD test data loader from %s'%OOD_DATASET_NAME)
-
+        
         rank_dset, rank_loaders, rank_dset_sizes = build_loaders_for_dataset(rank_dataset_name)
         ood_rank_dset, ood_rank_loaders, ood_rank_dset_sizes = build_loaders_for_dataset(OOD_DATASET_NAME)
-        train_loader, ind_test_loader = rank_loaders['train'], rank_loaders['val']
+        train_loader, ind_test_loader = rank_loaders['train'], rank_loaders['test']
         ood_test_loader = ood_rank_loaders['test']
-
+         
         print('loaders done, starting training...')
         p = mp.Process(
             target=run_worker,
             args=(
                 args.rank,
-                world_size,
-                args.num_gpus,
+                world_size, args.num_gpus,
                 train_loader,
-                ind_test_loader,
-                ood_test_loader,
-                args.corruption_rate,
-                args.num_epochs))
+                ood_test_loader, args.corruption_rate))
         p.start()
         processes.append(p)
 
