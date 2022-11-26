@@ -1,0 +1,521 @@
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Building train + in-distribution test data loader from mnist_rotation_one_by_nine
+Building OOD test data loader from mnist_rotation_nine_by_nine
+loaders done, starting training...
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Worker rank 3 initializing RPC
+[W ProcessGroupGloo.cpp:724] Warning: Unable to resolve hostname to a (local) address. Using the loopback address as fallback. Manually set the network interface to bind to with GLOO_SOCKET_IFNAME. (function operator())
+[W tensorpipe_agent.cpp:180] Failed to look up the IP address for the hostname (EAI_NONAME: unknown node or service (this error originated at tensorpipe/transport/uv/utility.cc:97)), defaulting to 127.0.0.1
+Worker 3 done initializing RPC
+saving as /Users/spandanmadan/saved_models/mnist_rotation_one_by_nine_world_size_4_rank_3.pt
+Starting Epoch:0
+Rank 3 training batch 0 loss 2.609096050262451
+Rank 3 training batch 5 loss 1.9740678071975708
+Rank 3 training batch 10 loss 1.6103860139846802
+Rank 3 training batch 15 loss 1.3580315113067627
+Rank 3 training batch 20 loss 1.2942025661468506
+Rank 3 training batch 25 loss 1.0229154825210571
+Rank 3 training batch 30 loss 0.8471437692642212
+Rank 3 training batch 35 loss 0.8291372656822205
+Rank 3 training batch 40 loss 0.6812829375267029
+Rank 3 training batch 45 loss 0.6278339624404907
+Rank 3 training batch 50 loss 0.5575845837593079
+Rank 3 training batch 55 loss 0.4926580786705017
+Rank 3 training batch 60 loss 0.47348552942276
+Rank 3 training batch 65 loss 0.3999320864677429
+Rank 3 training batch 70 loss 0.4623687267303467
+Rank 3 training batch 75 loss 0.45184430480003357
+Rank 3 training batch 80 loss 0.3851860463619232
+Rank 3 training batch 85 loss 0.39887064695358276
+Rank 3 training batch 90 loss 0.3538282811641693
+Rank 3 training batch 95 loss 0.2708934545516968
+Rank 3 training batch 100 loss 0.3884086310863495
+Rank 3 training batch 105 loss 0.33368536829948425
+Rank 3 training batch 110 loss 0.3291666805744171
+Rank 3 training batch 115 loss 0.18491144478321075
+Rank 3 training batch 120 loss 0.2929932475090027
+Rank 3 training batch 125 loss 0.2147158682346344
+Rank 3 training batch 130 loss 0.20676301419734955
+Rank 3 training batch 135 loss 0.31028199195861816
+Rank 3 training batch 140 loss 0.2828827202320099
+Rank 3 training batch 145 loss 0.1688409447669983
+Rank 3 training batch 150 loss 0.167457714676857
+Rank 3 training batch 155 loss 0.20063884556293488
+Rank 3 training batch 160 loss 0.2445417046546936
+Rank 3 training batch 165 loss 0.24609456956386566
+Rank 3 training batch 170 loss 0.25191909074783325
+Rank 3 training batch 175 loss 0.17982614040374756
+Rank 3 training batch 180 loss 0.14342767000198364
+Rank 3 training batch 185 loss 0.20509649813175201
+Rank 3 training batch 190 loss 0.267900288105011
+Rank 3 training batch 195 loss 0.10812316089868546
+Rank 3 training batch 200 loss 0.17223219573497772
+Rank 3 training batch 205 loss 0.17008312046527863
+Rank 3 training batch 210 loss 0.1465800702571869
+Rank 3 training batch 215 loss 0.1823384314775467
+Rank 3 training batch 220 loss 0.14202013611793518
+Rank 3 training batch 225 loss 0.10510832816362381
+Rank 3 training batch 230 loss 0.1064591184258461
+Rank 3 training batch 235 loss 0.1669953465461731
+Rank 3 training batch 240 loss 0.10933098196983337
+Rank 3 training batch 245 loss 0.16070258617401123
+Rank 3 training batch 250 loss 0.11019639670848846
+Rank 3 training batch 255 loss 0.185797780752182
+Rank 3 training batch 260 loss 0.19170592725276947
+Rank 3 training batch 265 loss 0.12176141887903214
+Rank 3 training batch 270 loss 0.07635486871004105
+Rank 3 training batch 275 loss 0.08676188439130783
+Rank 3 training batch 280 loss 0.10215666145086288
+Rank 3 training batch 285 loss 0.08940383046865463
+Rank 3 training batch 290 loss 0.08282207697629929
+Rank 3 training batch 295 loss 0.08857207000255585
+Rank 3 training batch 300 loss 0.17942838370800018
+Rank 3 training batch 305 loss 0.16479343175888062
+Rank 3 training batch 310 loss 0.17133064568042755
+Rank 3 training batch 315 loss 0.11802349239587784
+Rank 3 training batch 320 loss 0.13454294204711914
+Rank 3 training batch 325 loss 0.10160931944847107
+Rank 3 training batch 330 loss 0.10967155545949936
+Rank 3 training batch 335 loss 0.1416567713022232
+Rank 3 training batch 340 loss 0.1492282897233963
+Rank 3 training batch 345 loss 0.12231994420289993
+Rank 3 training batch 350 loss 0.11784610152244568
+Rank 3 training batch 355 loss 0.06841559708118439
+Rank 3 training batch 360 loss 0.12606680393218994
+Rank 3 training batch 365 loss 0.07604722678661346
+Rank 3 training batch 370 loss 0.1048542708158493
+Rank 3 training batch 375 loss 0.08759608119726181
+Rank 3 training batch 380 loss 0.08921483159065247
+Rank 3 training batch 385 loss 0.10477795451879501
+Rank 3 training batch 390 loss 0.05404019355773926
+Rank 3 training batch 395 loss 0.1501331925392151
+Rank 3 training batch 400 loss 0.08034645766019821
+Rank 3 training batch 405 loss 0.11955983936786652
+Rank 3 training batch 410 loss 0.06572915613651276
+Rank 3 training batch 415 loss 0.06116544082760811
+Rank 3 training batch 420 loss 0.1102338507771492
+Rank 3 training batch 425 loss 0.07380159199237823
+Rank 3 training batch 430 loss 0.0603850856423378
+Rank 3 training batch 435 loss 0.07550811767578125
+Rank 3 training batch 440 loss 0.13078591227531433
+Rank 3 training batch 445 loss 0.08731536567211151
+Rank 3 training batch 450 loss 0.058708757162094116
+Rank 3 training batch 455 loss 0.09502727538347244
+Rank 3 training batch 460 loss 0.060613468289375305
+Rank 3 training batch 465 loss 0.07316043227910995
+Rank 3 training batch 470 loss 0.04851407930254936
+Rank 3 training batch 475 loss 0.07506397366523743
+Rank 3 training batch 480 loss 0.06903594732284546
+Rank 3 training batch 485 loss 0.12278931587934494
+Rank 3 training batch 490 loss 0.11290659755468369
+Rank 3 training batch 495 loss 0.06483373045921326
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Training complete!
+Getting accuracy....
+In-D accuracy...
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Accuracy 0.9774
+OOD accuracy...
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Accuracy 0.3885
+Starting Epoch:1
+Rank 3 training batch 0 loss 0.0676283910870552
+Rank 3 training batch 5 loss 0.04434923082590103
+Rank 3 training batch 10 loss 0.0708116963505745
+Rank 3 training batch 15 loss 0.059603795409202576
+Rank 3 training batch 20 loss 0.04945501312613487
+Rank 3 training batch 25 loss 0.03923223167657852
+Rank 3 training batch 30 loss 0.03560979291796684
+Rank 3 training batch 35 loss 0.04089643433690071
+Rank 3 training batch 40 loss 0.0711422935128212
+Rank 3 training batch 45 loss 0.07085272669792175
+Rank 3 training batch 50 loss 0.07126465439796448
+Rank 3 training batch 55 loss 0.028513295575976372
+Rank 3 training batch 60 loss 0.036767929792404175
+Rank 3 training batch 65 loss 0.08199193328619003
+Rank 3 training batch 70 loss 0.056452952325344086
+Rank 3 training batch 75 loss 0.11334351450204849
+Rank 3 training batch 80 loss 0.07585078477859497
+Rank 3 training batch 85 loss 0.05035986751317978
+Rank 3 training batch 90 loss 0.03268402814865112
+Rank 3 training batch 95 loss 0.07289569079875946
+Rank 3 training batch 100 loss 0.08349555730819702
+Rank 3 training batch 105 loss 0.07043784111738205
+Rank 3 training batch 110 loss 0.02196958288550377
+Rank 3 training batch 115 loss 0.03847062587738037
+Rank 3 training batch 120 loss 0.03945792838931084
+Rank 3 training batch 125 loss 0.03592555224895477
+Rank 3 training batch 130 loss 0.06297620385885239
+Rank 3 training batch 135 loss 0.05492793396115303
+Rank 3 training batch 140 loss 0.02696274034678936
+Rank 3 training batch 145 loss 0.07342422753572464
+Rank 3 training batch 150 loss 0.10024569183588028
+Rank 3 training batch 155 loss 0.02824377454817295
+Rank 3 training batch 160 loss 0.08878690004348755
+Rank 3 training batch 165 loss 0.06303450465202332
+Rank 3 training batch 170 loss 0.10517872869968414
+Rank 3 training batch 175 loss 0.049088045954704285
+Rank 3 training batch 180 loss 0.06405185163021088
+Rank 3 training batch 185 loss 0.04436828941106796
+Rank 3 training batch 190 loss 0.04027285426855087
+Rank 3 training batch 195 loss 0.06082239747047424
+Rank 3 training batch 200 loss 0.06372252106666565
+Rank 3 training batch 205 loss 0.049935583025217056
+Rank 3 training batch 210 loss 0.11225924640893936
+Rank 3 training batch 215 loss 0.05321003496646881
+Rank 3 training batch 220 loss 0.08518317341804504
+Rank 3 training batch 225 loss 0.05602274090051651
+Rank 3 training batch 230 loss 0.03792998939752579
+Rank 3 training batch 235 loss 0.05831317603588104
+Rank 3 training batch 240 loss 0.02244923822581768
+Rank 3 training batch 245 loss 0.04271150752902031
+Rank 3 training batch 250 loss 0.025166228413581848
+Rank 3 training batch 255 loss 0.04025488346815109
+Rank 3 training batch 260 loss 0.0324801504611969
+Rank 3 training batch 265 loss 0.07901013642549515
+Rank 3 training batch 270 loss 0.08205977082252502
+Rank 3 training batch 275 loss 0.054929379373788834
+Rank 3 training batch 280 loss 0.046331096440553665
+Rank 3 training batch 285 loss 0.029624229297041893
+Rank 3 training batch 290 loss 0.05595526099205017
+Rank 3 training batch 295 loss 0.013052668422460556
+Rank 3 training batch 300 loss 0.05180292949080467
+Rank 3 training batch 305 loss 0.07928922772407532
+Rank 3 training batch 310 loss 0.051118917763233185
+Rank 3 training batch 315 loss 0.05154119059443474
+Rank 3 training batch 320 loss 0.05282330885529518
+Rank 3 training batch 325 loss 0.06521887332201004
+Rank 3 training batch 330 loss 0.05401371419429779
+Rank 3 training batch 335 loss 0.035999879240989685
+Rank 3 training batch 340 loss 0.0384400300681591
+Rank 3 training batch 345 loss 0.0557468943297863
+Rank 3 training batch 350 loss 0.06220298260450363
+Rank 3 training batch 355 loss 0.02043718285858631
+Rank 3 training batch 360 loss 0.0884179100394249
+Rank 3 training batch 365 loss 0.0303743127733469
+Rank 3 training batch 370 loss 0.0163899976760149
+Rank 3 training batch 375 loss 0.030956268310546875
+Rank 3 training batch 380 loss 0.028568174690008163
+Rank 3 training batch 385 loss 0.02835145965218544
+Rank 3 training batch 390 loss 0.024497048929333687
+Rank 3 training batch 395 loss 0.014406763017177582
+Rank 3 training batch 400 loss 0.036968305706977844
+Rank 3 training batch 405 loss 0.03218097984790802
+Rank 3 training batch 410 loss 0.03761477395892143
+Rank 3 training batch 415 loss 0.0371892936527729
+Rank 3 training batch 420 loss 0.028397629037499428
+Rank 3 training batch 425 loss 0.03993657976388931
+Rank 3 training batch 430 loss 0.04032088816165924
+Rank 3 training batch 435 loss 0.01702299527823925
+Rank 3 training batch 440 loss 0.03726186975836754
+Rank 3 training batch 445 loss 0.03756008669734001
+Rank 3 training batch 450 loss 0.02810703031718731
+Rank 3 training batch 455 loss 0.03233591467142105
+Rank 3 training batch 460 loss 0.018697883933782578
+Rank 3 training batch 465 loss 0.028641119599342346
+Rank 3 training batch 470 loss 0.015179522335529327
+Rank 3 training batch 475 loss 0.0393846221268177
+Rank 3 training batch 480 loss 0.06023269146680832
+Rank 3 training batch 485 loss 0.028048498556017876
+Rank 3 training batch 490 loss 0.06269340962171555
+Rank 3 training batch 495 loss 0.04799328371882439
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Training complete!
+Getting accuracy....
+In-D accuracy...
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Accuracy 0.985
+OOD accuracy...
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Accuracy 0.3992
+Starting Epoch:2
+Rank 3 training batch 0 loss 0.02832217514514923
+Rank 3 training batch 5 loss 0.022462274879217148
+Rank 3 training batch 10 loss 0.03960752114653587
+Rank 3 training batch 15 loss 0.015943128615617752
+Rank 3 training batch 20 loss 0.029776036739349365
+Rank 3 training batch 25 loss 0.02518371492624283
+Rank 3 training batch 30 loss 0.034863587468862534
+Rank 3 training batch 35 loss 0.012625433504581451
+Rank 3 training batch 40 loss 0.10929113626480103
+Rank 3 training batch 45 loss 0.02552328258752823
+Rank 3 training batch 50 loss 0.021598517894744873
+Rank 3 training batch 55 loss 0.02575017884373665
+Rank 3 training batch 60 loss 0.040786609053611755
+Rank 3 training batch 65 loss 0.06522279977798462
+Rank 3 training batch 70 loss 0.010569515638053417
+Rank 3 training batch 75 loss 0.01885773241519928
+Rank 3 training batch 80 loss 0.03383097052574158
+Rank 3 training batch 85 loss 0.012124445289373398
+Rank 3 training batch 90 loss 0.02527766302227974
+Rank 3 training batch 95 loss 0.010419086553156376
+Rank 3 training batch 100 loss 0.03613493964076042
+Rank 3 training batch 105 loss 0.05851297453045845
+Rank 3 training batch 110 loss 0.038279566913843155
+Rank 3 training batch 115 loss 0.019370336085557938
+Rank 3 training batch 120 loss 0.022085200995206833
+Rank 3 training batch 125 loss 0.05102979764342308
+Rank 3 training batch 130 loss 0.06273815035820007
+Rank 3 training batch 135 loss 0.007678440771996975
+Rank 3 training batch 140 loss 0.04009387642145157
+Rank 3 training batch 145 loss 0.02145356684923172
+Rank 3 training batch 150 loss 0.025485003367066383
+Rank 3 training batch 155 loss 0.01817234233021736
+Rank 3 training batch 160 loss 0.021065987646579742
+Rank 3 training batch 165 loss 0.02851834148168564
+Rank 3 training batch 170 loss 0.021237295120954514
+Rank 3 training batch 175 loss 0.028223801404237747
+Rank 3 training batch 180 loss 0.018783720210194588
+Rank 3 training batch 185 loss 0.02139465883374214
+Rank 3 training batch 190 loss 0.019587941467761993
+Rank 3 training batch 195 loss 0.03916846215724945
+Rank 3 training batch 200 loss 0.06217449530959129
+Rank 3 training batch 205 loss 0.018553361296653748
+Rank 3 training batch 210 loss 0.017694806680083275
+Rank 3 training batch 215 loss 0.03192785009741783
+Rank 3 training batch 220 loss 0.027334008365869522
+Rank 3 training batch 225 loss 0.032949741929769516
+Rank 3 training batch 230 loss 0.023896515369415283
+Rank 3 training batch 235 loss 0.017814598977565765
+Rank 3 training batch 240 loss 0.028557412326335907
+Rank 3 training batch 245 loss 0.01531667448580265
+Rank 3 training batch 250 loss 0.014317573048174381
+Rank 3 training batch 255 loss 0.032972101122140884
+Rank 3 training batch 260 loss 0.033642593771219254
+Rank 3 training batch 265 loss 0.014171233400702477
+Rank 3 training batch 270 loss 0.03087526001036167
+Rank 3 training batch 275 loss 0.01901146024465561
+Rank 3 training batch 280 loss 0.0352637879550457
+Rank 3 training batch 285 loss 0.02425321191549301
+Rank 3 training batch 290 loss 0.037906136363744736
+Rank 3 training batch 295 loss 0.01923840120434761
+Rank 3 training batch 300 loss 0.011653232388198376
+Rank 3 training batch 305 loss 0.012908649630844593
+Rank 3 training batch 310 loss 0.033222682774066925
+Rank 3 training batch 315 loss 0.013185696676373482
+Rank 3 training batch 320 loss 0.04350079596042633
+Rank 3 training batch 325 loss 0.008426392450928688
+Rank 3 training batch 330 loss 0.03373860940337181
+Rank 3 training batch 335 loss 0.04379035905003548
+Rank 3 training batch 340 loss 0.01996079459786415
+Rank 3 training batch 345 loss 0.011037408374249935
+Rank 3 training batch 350 loss 0.026205306872725487
+Rank 3 training batch 355 loss 0.07678298652172089
+Rank 3 training batch 360 loss 0.007998380810022354
+Rank 3 training batch 365 loss 0.03869621455669403
+Rank 3 training batch 370 loss 0.03417917340993881
+Rank 3 training batch 375 loss 0.053777921944856644
+Rank 3 training batch 380 loss 0.01393523532897234
+Rank 3 training batch 385 loss 0.01884946972131729
+Rank 3 training batch 390 loss 0.06901193410158157
+Rank 3 training batch 395 loss 0.016746319830417633
+Rank 3 training batch 400 loss 0.023489996790885925
+Rank 3 training batch 405 loss 0.01258508488535881
+Rank 3 training batch 410 loss 0.015173869207501411
+Rank 3 training batch 415 loss 0.03705326095223427
+Rank 3 training batch 420 loss 0.005740798078477383
+Rank 3 training batch 425 loss 0.022015411406755447
+Rank 3 training batch 430 loss 0.01004547718912363
+Rank 3 training batch 435 loss 0.005425687413662672
+Rank 3 training batch 440 loss 0.024640902876853943
+Rank 3 training batch 445 loss 0.021451745182275772
+Rank 3 training batch 450 loss 0.018948622047901154
+Rank 3 training batch 455 loss 0.006679968908429146
+Rank 3 training batch 460 loss 0.03332946076989174
+Rank 3 training batch 465 loss 0.013033832423388958
+Rank 3 training batch 470 loss 0.018268128857016563
+Rank 3 training batch 475 loss 0.03267296776175499
+Rank 3 training batch 480 loss 0.015193556435406208
+Rank 3 training batch 485 loss 0.011471595615148544
+Rank 3 training batch 490 loss 0.030843354761600494
+Rank 3 training batch 495 loss 0.014575494453310966
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Training complete!
+Getting accuracy....
+In-D accuracy...
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Accuracy 0.9883
+OOD accuracy...
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Accuracy 0.4023
+Starting Epoch:3
+Rank 3 training batch 0 loss 0.008371088653802872
+Rank 3 training batch 5 loss 0.0099553931504488
+Rank 3 training batch 10 loss 0.011415195651352406
+Rank 3 training batch 15 loss 0.026337387040257454
+Rank 3 training batch 20 loss 0.01045906450599432
+Rank 3 training batch 25 loss 0.03944718465209007
+Rank 3 training batch 30 loss 0.017722606658935547
+Rank 3 training batch 35 loss 0.014535894617438316
+Rank 3 training batch 40 loss 0.01198679767549038
+Rank 3 training batch 45 loss 0.0240606889128685
+Rank 3 training batch 50 loss 0.018800532445311546
+Rank 3 training batch 55 loss 0.02940436452627182
+Rank 3 training batch 60 loss 0.006313749589025974
+Rank 3 training batch 65 loss 0.030975498259067535
+Rank 3 training batch 70 loss 0.006131757982075214
+Rank 3 training batch 75 loss 0.030366336926817894
+Rank 3 training batch 80 loss 0.012287591584026814
+Rank 3 training batch 85 loss 0.027853304520249367
+Rank 3 training batch 90 loss 0.006153828930109739
+Rank 3 training batch 95 loss 0.01330792810767889
+Rank 3 training batch 100 loss 0.025015471503138542
+Rank 3 training batch 105 loss 0.013728957623243332
+Rank 3 training batch 110 loss 0.015434440225362778
+Rank 3 training batch 115 loss 0.013443482108414173
+Rank 3 training batch 120 loss 0.009997744113206863
+Rank 3 training batch 125 loss 0.009877707809209824
+Rank 3 training batch 130 loss 0.010991619899868965
+Rank 3 training batch 135 loss 0.009896812960505486
+Rank 3 training batch 140 loss 0.013091805391013622
+Rank 3 training batch 145 loss 0.012683633714914322
+Rank 3 training batch 150 loss 0.015150465071201324
+Rank 3 training batch 155 loss 0.023590240627527237
+Rank 3 training batch 160 loss 0.005747329443693161
+Rank 3 training batch 165 loss 0.0252698827534914
+Rank 3 training batch 170 loss 0.010377286933362484
+Rank 3 training batch 175 loss 0.01755153387784958
+Rank 3 training batch 180 loss 0.01007766928523779
+Rank 3 training batch 185 loss 0.008895419538021088
+Rank 3 training batch 190 loss 0.008176123723387718
+Rank 3 training batch 195 loss 0.017602793872356415
+Rank 3 training batch 200 loss 0.02167613059282303
+Rank 3 training batch 205 loss 0.04014812782406807
+Rank 3 training batch 210 loss 0.0028078281320631504
+Rank 3 training batch 215 loss 0.005609465297311544
+Rank 3 training batch 220 loss 0.020892484113574028
+Rank 3 training batch 225 loss 0.01347394846379757
+Rank 3 training batch 230 loss 0.08931213617324829
+Rank 3 training batch 235 loss 0.0122302221134305
+Rank 3 training batch 240 loss 0.006035330705344677
+Rank 3 training batch 245 loss 0.010280187241733074
+Rank 3 training batch 250 loss 0.005394460167735815
+Rank 3 training batch 255 loss 0.008987115696072578
+Rank 3 training batch 260 loss 0.010293470695614815
+Rank 3 training batch 265 loss 0.03881807625293732
+Rank 3 training batch 270 loss 0.021620774641633034
+Rank 3 training batch 275 loss 0.014108615927398205
+Rank 3 training batch 280 loss 0.0142976688221097
+Rank 3 training batch 285 loss 0.013657565228641033
+Rank 3 training batch 290 loss 0.03082169219851494
+Rank 3 training batch 295 loss 0.006096669472754002
+Rank 3 training batch 300 loss 0.01439108606427908
+Rank 3 training batch 305 loss 0.00935556273907423
+Rank 3 training batch 310 loss 0.022746598348021507
+Rank 3 training batch 315 loss 0.020439665764570236
+Rank 3 training batch 320 loss 0.02182418294250965
+Rank 3 training batch 325 loss 0.0213302094489336
+Rank 3 training batch 330 loss 0.008774311281740665
+Rank 3 training batch 335 loss 0.01841815933585167
+Rank 3 training batch 340 loss 0.009571444243192673
+Rank 3 training batch 345 loss 0.012540347874164581
+Rank 3 training batch 350 loss 0.010966637171804905
+Rank 3 training batch 355 loss 0.012392083182930946
+Rank 3 training batch 360 loss 0.03147595748305321
+Rank 3 training batch 365 loss 0.007049690466374159
+Rank 3 training batch 370 loss 0.006062137428671122
+Rank 3 training batch 375 loss 0.021801043301820755
+Rank 3 training batch 380 loss 0.011193793267011642
+Rank 3 training batch 385 loss 0.011125926859676838
+Rank 3 training batch 390 loss 0.00438188249245286
+Rank 3 training batch 395 loss 0.03866765275597572
+Rank 3 training batch 400 loss 0.017409419640898705
+Rank 3 training batch 405 loss 0.031319551169872284
+Rank 3 training batch 410 loss 0.004700342193245888
+Rank 3 training batch 415 loss 0.007815802469849586
+Rank 3 training batch 420 loss 0.013663108460605145
+Rank 3 training batch 425 loss 0.0058855884708464146
+Rank 3 training batch 430 loss 0.009662060998380184
+Rank 3 training batch 435 loss 0.008392348885536194
+Rank 3 training batch 440 loss 0.014990057796239853
+Rank 3 training batch 445 loss 0.011091095395386219
+Rank 3 training batch 450 loss 0.015618604607880116
+Rank 3 training batch 455 loss 0.031328145414590836
+Rank 3 training batch 460 loss 0.018307721242308617
+Rank 3 training batch 465 loss 0.023948704823851585
+Rank 3 training batch 470 loss 0.02388661913573742
+Rank 3 training batch 475 loss 0.018436016514897346
+Rank 3 training batch 480 loss 0.028335463255643845
+Rank 3 training batch 485 loss 0.03104492835700512
+Rank 3 training batch 490 loss 0.00530327158048749
+Rank 3 training batch 495 loss 0.020686879754066467
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Training complete!
+Getting accuracy....
+In-D accuracy...
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Accuracy 0.9898
+OOD accuracy...
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Accuracy 0.4067
+saving model
+[W tensorpipe_agent.cpp:726] RPC agent for trainer_3 encountered error when reading incoming request from parameter_server: pipe closed (this error originated at tensorpipe/core/pipe_impl.cc:356)
+[W tensorpipe_agent.cpp:726] RPC agent for trainer_3 encountered error when reading incoming request from trainer_1: pipe closed (this error originated at tensorpipe/core/pipe_impl.cc:356)
+Traceback (most recent call last):
+  File "out_of_distribution_parameter_server.py", line 529, in <module>
+    p.join()
+  File "/Users/spandanmadan/miniconda3/envs/turing/lib/python3.8/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/Users/spandanmadan/miniconda3/envs/turing/lib/python3.8/multiprocessing/popen_fork.py", line 47, in wait
+    return self.poll(os.WNOHANG if timeout == 0.0 else 0)
+  File "/Users/spandanmadan/miniconda3/envs/turing/lib/python3.8/multiprocessing/popen_fork.py", line 27, in poll
+    pid, sts = os.waitpid(self.pid, flag)
+KeyboardInterrupt
+Process Process-1:
+Traceback (most recent call last):
+  File "/Users/spandanmadan/miniconda3/envs/turing/lib/python3.8/multiprocessing/process.py", line 315, in _bootstrap
+    self.run()
+  File "/Users/spandanmadan/miniconda3/envs/turing/lib/python3.8/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/Users/spandanmadan/federated_generalization/out_of_distribution_parameter_server.py", line 419, in run_worker
+    rpc.shutdown()
+  File "/Users/spandanmadan/miniconda3/envs/turing/lib/python3.8/site-packages/torch/distributed/rpc/api.py", line 82, in wrapper
+    return func(*args, **kwargs)
+  File "/Users/spandanmadan/miniconda3/envs/turing/lib/python3.8/site-packages/torch/distributed/rpc/api.py", line 362, in shutdown
+    _wait_all_workers(timeout)
+  File "/Users/spandanmadan/miniconda3/envs/turing/lib/python3.8/site-packages/torch/distributed/rpc/api.py", line 82, in wrapper
+    return func(*args, **kwargs)
+  File "/Users/spandanmadan/miniconda3/envs/turing/lib/python3.8/site-packages/torch/distributed/rpc/api.py", line 300, in _wait_all_workers
+    _all_gather(None, timeout=timeout)
+  File "/Users/spandanmadan/miniconda3/envs/turing/lib/python3.8/site-packages/torch/distributed/rpc/api.py", line 82, in wrapper
+    return func(*args, **kwargs)
+  File "/Users/spandanmadan/miniconda3/envs/turing/lib/python3.8/site-packages/torch/distributed/rpc/api.py", line 235, in _all_gather
+    states.proceed_signal.wait(timeout=signal_timeout)
+  File "/Users/spandanmadan/miniconda3/envs/turing/lib/python3.8/threading.py", line 558, in wait
+    signaled = self._cond.wait(timeout)
+  File "/Users/spandanmadan/miniconda3/envs/turing/lib/python3.8/threading.py", line 302, in wait
+    waiter.acquire()
+KeyboardInterrupt
+Error in atexit._run_exitfuncs:
+Traceback (most recent call last):
+  File "/Users/spandanmadan/miniconda3/envs/turing/lib/python3.8/multiprocessing/popen_fork.py", line 27, in poll
+    pid, sts = os.waitpid(self.pid, flag)
+KeyboardInterrupt

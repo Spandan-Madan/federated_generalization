@@ -40,13 +40,12 @@ sys.path.append('./res/')
 from models.models import get_model
 from loader.loader import get_loader
 
-
 ##### Details for different data loaders created ######
 CODE_ROOT = './'
 
 
-DATASET_NAMES = ['mnist_rotation_one_by_nine', 'mnist_rotation_one_by_nine',
-                 'mnist_rotation_six_by_nine']
+# DATASET_NAMES = ['mnist_rotation_one_by_nine', 'mnist_rotation_one_by_nine',
+                 # 'mnist_rotation_one_by_nine','mnist_rotation_one_by_nine']
 OOD_DATASET_NAME = 'mnist_rotation_nine_by_nine'
 NUM_EPOCHS = 10
 BATCH_SIZE = 100
@@ -118,11 +117,11 @@ Definition for Neural Networks. We could replace the architecture with our netwo
 class Net(nn.Module):
     def __init__(self, num_gpus=0):
         super(Net, self).__init__()
-        print(f"Using {num_gpus} GPUs to train")
+        print(f"Using {num_gpus} GPUs to train", flush=True)
         self.num_gpus = num_gpus
         device = torch.device(
             "cuda:0" if torch.cuda.is_available() and self.num_gpus > 0 else "cpu")
-        print(f"Putting first 2 convs on {str(device)}")
+        print(f"Putting first 2 convs on {str(device)}", flush=True)
         # Put conv layers on the first cuda device, or CPU if no cuda device
         self.conv1 = nn.Conv2d(3, 28, 3, 1).to(device)
         self.conv2 = nn.Conv2d(28, 64, 3, 1).to(device)
@@ -133,7 +132,7 @@ class Net(nn.Module):
         The setup here only supports 0-2 gpus, can be extended if more available
         '''
 
-        print(f"Putting rest of layers on {str(device)}")
+        print(f"Putting rest of layers on {str(device)}", flush=True)
         self.dropout1 = nn.Dropout2d(0.25).to(device)
         self.dropout2 = nn.Dropout2d(0.5).to(device)
         self.fc1 = nn.Linear(9216, 128).to(device)
@@ -210,6 +209,9 @@ class ParameterServer(nn.Module):
         # Tensors must be moved in and out of GPU memory due to this.
         out = out.to("cpu")
         return out
+    # def save_model(self,save_path):
+    #     with open(save_path,'wb') as F:
+    #         torch.save(self.model, F)
 
     # Use dist autograd to retrieve gradients accumulated for this model.
     # Primarily used for verification.
@@ -263,11 +265,11 @@ def run_parameter_server(rank, world_size):
     # rpc.shutdown() will wait for all workers to complete by default, which
     # in this case means that the parameter server will wait for all trainers
     # to complete, and then exit.
-    print("PS master initializing RPC")
+    print("PS master initializing RPC", flush=True)
     rpc.init_rpc(name="parameter_server", rank=rank, world_size=world_size)
-    print("RPC initialized! Running parameter server...")
+    print("RPC initialized! Running parameter server...", flush=True)
     rpc.shutdown()
-    print("RPC shutdown on parameter server.")
+    print("RPC shutdown on parameter server.", flush=True)
 
 '''
 TrainerNet is a class for trainers that consists of a singleton parameter server ref
@@ -294,6 +296,9 @@ class TrainerNet(nn.Module):
             ParameterServer.forward, self.param_server_rref, x)
         return model_output
 
+    # def save_trainer(self, save_path):
+        # param_server.save_model(ParameterServer,save_path=save_path)
+
 from threading import Condition
 trainer_cv = Condition()
 def set_cv():
@@ -315,7 +320,7 @@ def get_accuracy(test_loader, model):
             pred, target = pred.to(device), target.to(device)
             correct = pred.eq(target.view_as(pred)).sum().item()
             correct_sum += correct
-    print(f"Accuracy {correct_sum / len(test_loader.dataset)}")
+    print(f"Accuracy {correct_sum / len(test_loader.dataset)}", flush=True)
 
 
 def run_training_loop(net,rank, world_size, num_gpus, train_loader, test_loader, ood_test_loader, corruption_rate):
@@ -346,7 +351,7 @@ def run_training_loop(net,rank, world_size, num_gpus, train_loader, test_loader,
             loss = CE_loss(model_output, target)
 
             if i % 5 == 0:
-                print(f"Rank {rank} training batch {i} loss {loss.item()}")
+                print(f"Rank {rank} training batch {i} loss {loss.item()}", flush=True)
             # wait_all_trainers(rank, world_size)
             '''
             # Run the backward pass.
@@ -370,64 +375,24 @@ def run_training_loop(net,rank, world_size, num_gpus, train_loader, test_loader,
                 prev_cid = cid
             opt.step(cid)
 
-        if rank == 2:
-            rpc.rpc_sync("trainer_1", set_cv, args=())
-            # rpc.rpc_sync("trainer_3", set_cv, args=())
+        if rank != 1 :
+            rpc.rpc_sync("trainer_%s"%(int(rank)-1), set_cv, args=())
             with trainer_cv:
                 trainer_cv.wait()
-        if rank == 3:
-            # rpc.rpc_sync("trainer_1", set_cv, args=())
-            rpc.rpc_sync("trainer_2", set_cv, args=())
-            # with trainer_cv:
-            #     trainer_cv.wait()
-            # rpc.rpc_sync("trainer_4", set_cv, args=())
-            # with trainer_cv:
-            #     trainer_cv.wait()
-
-        # if rank == 3:
-        #     rpc.rpc_sync("trainer_1", set_cv, args=())
-        #     with trainer_cv:
-        #         trainer_cv.wait()
-        #     rpc.rpc_sync("trainer_2", set_cv, args=())
-        #     with trainer_cv:
-        #         trainer_cv.wait()
-            # rpc.rpc_sync("trainer_4", set_cv, args=())
-            # with trainer_cv:
-            #     trainer_cv.wait()
-
-        # if rank == 4:
-        #     rpc.rpc_sync("trainer_1", set_cv, args=())
-        #     with trainer_cv:
-        #         trainer_cv.wait()
-        #     rpc.rpc_sync("trainer_2", set_cv, args=())
-        #     with trainer_cv:
-        #         trainer_cv.wait()
-        #     rpc.rpc_sync("trainer_3 ", set_cv, args=())
-        #     with trainer_cv:
-        #         trainer_cv.wait()
 
         if rank == 1:
-            # rpc.rpc_sync("trainer_2", set_cv, args=())
-            rpc.rpc_sync("trainer_3", set_cv, args=())
-            # rpc.rpc_sync("trainer_4", set_cv, args=())
+            rpc.rpc_sync("trainer_%s"%(int(world_size) - 1), set_cv, args=())
 
-        # if rank == 2:
-        #     rpc.rpc_sync("trainer_1", set_cv, args=())
-        #     with trainer_cv:
-        #         trainer_cv.wait()
-        #  if rank == 1:
-             # rpc.rpc_sync("trainer_2", set_cv, args=())
-            # wait_all_trainers(rank=rank, world_size=world_size)
-    print("Training complete!")
-    print("Getting accuracy....")
-    print('In-D accuracy...')
+    print("Training complete!", flush=True)
+    print("Getting accuracy....", flush=True)
+    print('In-D accuracy...', flush=True)
     get_accuracy(test_loader, net)
-    print('OOD accuracy...')
+    print('OOD accuracy...', flush=True)
     get_accuracy(ood_test_loader ,net)
 
 # Main loop for trainers.
-def run_worker(rank, world_size, num_gpus, train_loader, test_loader, ood_test_loader, corruption_rate, num_epochs):
-    print(f"Worker rank {rank} initializing RPC")
+def run_worker(rank, world_size, num_gpus, train_loader, test_loader, ood_test_loader, corruption_rate, num_epochs, model_save_name):
+    print(f"Worker rank {rank} initializing RPC", flush=True)
 
     '''
     name (str) – a globally unique name of this node.
@@ -440,11 +405,17 @@ def run_worker(rank, world_size, num_gpus, train_loader, test_loader, ood_test_l
         rank=rank,
         world_size=world_size)
 
-    print(f"Worker {rank} done initializing RPC")
+    print(f"Worker {rank} done initializing RPC", flush=True)
     net = TrainerNet(num_gpus=num_gpus)
+    save_name = '/Users/spandanmadan/saved_models/%s_rank_%s.pt'%(model_save_name, rank)
+    print('saving as %s'%save_name)
+    # torch.save(net,save_name)
+    # net.save_trainer(save_name)
     for epoch_num in range(num_epochs):
-        print('Starting Epoch:%s'%epoch_num)
+        print('Starting Epoch:%s'%epoch_num, flush=True)
         run_training_loop(net,rank, world_size, num_gpus, train_loader, test_loader, ood_test_loader, corruption_rate)
+    print('saving model', flush=True)
+    # net.save_trainer('/Users/spandanmadan/saved_models/%s_rank_%s.pt'%(model_save_name, rank))
     rpc.shutdown()
 
 
@@ -489,10 +460,21 @@ if __name__ == '__main__':
         won't be any corruption. Otherwise, each worker will have the corruption rate chance
         to drop the gradient update.""")
 
+    parser.add_argument('--dataset_names',
+        nargs='+',
+        help='list of datasets for models',
+        required=True)
+
+    parser.add_argument('--model_save_name',
+        type=str,
+        help='name stub for models',
+        required=True)
+
+
     parser.add_argument(
         "--num_epochs",
         type=int,
-        default= 10,
+        default= 1,
         help="""Number of epochs agents should be trained""")
 
     args = parser.parse_args()
@@ -518,16 +500,16 @@ if __name__ == '__main__':
         Other starts the worker process
         '''
         # Get data to train on
-        rank_dataset_name = DATASET_NAMES[args.rank-1]
-        print('Building train + in-distribution test data loader from %s'%rank_dataset_name)
-        print('Building OOD test data loader from %s'%OOD_DATASET_NAME)
+        rank_dataset_name = args.dataset_names[args.rank-1]
+        print('Building train + in-distribution test data loader from %s'%rank_dataset_name, flush=True)
+        print('Building OOD test data loader from %s'%OOD_DATASET_NAME, flush=True)
 
         rank_dset, rank_loaders, rank_dset_sizes = build_loaders_for_dataset(rank_dataset_name)
         ood_rank_dset, ood_rank_loaders, ood_rank_dset_sizes = build_loaders_for_dataset(OOD_DATASET_NAME)
         train_loader, ind_test_loader = rank_loaders['train'], rank_loaders['val']
         ood_test_loader = ood_rank_loaders['test']
 
-        print('loaders done, starting training...')
+        print('loaders done, starting training...', flush=True)
         p = mp.Process(
             target=run_worker,
             args=(
@@ -538,7 +520,8 @@ if __name__ == '__main__':
                 ind_test_loader,
                 ood_test_loader,
                 args.corruption_rate,
-                args.num_epochs))
+                args.num_epochs,
+                args.model_save_name))
         p.start()
         processes.append(p)
 

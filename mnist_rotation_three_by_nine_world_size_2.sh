@@ -1,0 +1,2 @@
+python out_of_distribution_parameter_server.py --world_size 2 --corruption_rate 0.0 --rank 0 --num_epochs 12 --model_save_name mnist_rotation_three_by_nine_world_size_2 --dataset_names mnist_rotation_three_by_nine  > logs/mnist_rotation_three_by_nine_world_size_2_0.out 2>&1 &
+python out_of_distribution_parameter_server.py --world_size 2 --corruption_rate 0.0 --rank 1 --num_epochs 12 --model_save_name mnist_rotation_three_by_nine_world_size_2 --dataset_names mnist_rotation_three_by_nine > logs/mnist_rotation_three_by_nine_world_size_2_1.out 2>&1
