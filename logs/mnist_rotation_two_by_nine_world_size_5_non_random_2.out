@@ -1,0 +1,24 @@
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Corrupting the following ranks:
+[1, 2, 3, 4]
+Building train + in-distribution test data loader from mnist_rotation_two_by_nine_non_random_split_1
+Building OOD test data loader from mnist_rotation_nine_by_nine
+loaders done, starting training...
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Worker rank 2 initializing RPC
+[W ProcessGroupGloo.cpp:724] Warning: Unable to resolve hostname to a (local) address. Using the loopback address as fallback. Manually set the network interface to bind to with GLOO_SOCKET_IFNAME. (function operator())
+[W tensorpipe_agent.cpp:180] Failed to look up the IP address for the hostname (EAI_NONAME: unknown node or service (this error originated at tensorpipe/transport/uv/utility.cc:97)), defaulting to 127.0.0.1
+Worker 2 done initializing RPC
+saving as /Users/spandanmadan/saved_models/mnist_rotation_two_by_nine_world_size_5_non_random_rank_2.pt
+Starting Epoch:0
+Rank 2 training batch 0 loss 2.3988866806030273
+Rank 2 training batch 5 loss 2.2615349292755127
+Rank 2 training batch 10 loss 2.1661484241485596
+Rank 2 training batch 15 loss 1.9448148012161255
+Rank 2 training batch 20 loss 1.9347797632217407
+onda3/envs/turing/lib/python3.8/multiprocessing/resource_tracker.py:216: UserWarning: resource_tracker: There appear to be 11 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

@@ -199,3 +199,165 @@ Rank 1 training batch 330 loss 0.04936637729406357
 Rank 1 training batch 335 loss 0.08131230622529984
 Rank 1 training batch 340 loss 0.06689752638339996
 Rank 1 training batch 345 loss 0.07510169595479965
+Rank 1 training batch 350 loss 0.14729568362236023
+Rank 1 training batch 355 loss 0.0801783874630928
+Rank 1 training batch 360 loss 0.07462918013334274
+Rank 1 training batch 365 loss 0.08837101608514786
+Rank 1 training batch 370 loss 0.07176835834980011
+Rank 1 training batch 375 loss 0.04923209175467491
+Rank 1 training batch 380 loss 0.1329277753829956
+Rank 1 training batch 385 loss 0.09381210058927536
+Rank 1 training batch 390 loss 0.09387384355068207
+Rank 1 training batch 395 loss 0.10638196021318436
+Rank 1 training batch 400 loss 0.06504687666893005
+Rank 1 training batch 405 loss 0.08499700576066971
+Rank 1 training batch 410 loss 0.08431022614240646
+Rank 1 training batch 415 loss 0.1204008013010025
+Rank 1 training batch 420 loss 0.09507451951503754
+Rank 1 training batch 425 loss 0.05254433676600456
+Rank 1 training batch 430 loss 0.10477449744939804
+Rank 1 training batch 435 loss 0.08187877386808395
+Rank 1 training batch 440 loss 0.10790350288152695
+Rank 1 training batch 445 loss 0.0730336531996727
+Rank 1 training batch 450 loss 0.09890365600585938
+Rank 1 training batch 455 loss 0.08348748832941055
+Rank 1 training batch 460 loss 0.06984832882881165
+Rank 1 training batch 465 loss 0.10756304860115051
+Rank 1 training batch 470 loss 0.09379983693361282
+Rank 1 training batch 475 loss 0.11183243989944458
+Rank 1 training batch 480 loss 0.06179458275437355
+Rank 1 training batch 485 loss 0.08581680059432983
+Rank 1 training batch 490 loss 0.10593599081039429
+Rank 1 training batch 495 loss 0.09974834322929382
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Training complete!
+Getting accuracy....
+In-D accuracy...
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Accuracy 0.955
+OOD accuracy...
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Accuracy 0.5663
+Starting Epoch:2
+Rank 1 training batch 0 loss 0.041966959834098816
+Rank 1 training batch 5 loss 0.0641581118106842
+Rank 1 training batch 10 loss 0.06005505099892616
+Rank 1 training batch 15 loss 0.06606364995241165
+Rank 1 training batch 20 loss 0.0504753477871418
+Rank 1 training batch 25 loss 0.07213817536830902
+Rank 1 training batch 30 loss 0.0906858742237091
+Rank 1 training batch 35 loss 0.053845588117837906
+Rank 1 training batch 40 loss 0.04832790791988373
+Rank 1 training batch 45 loss 0.08658405393362045
+Rank 1 training batch 50 loss 0.06662160158157349
+Rank 1 training batch 55 loss 0.05529487505555153
+Rank 1 training batch 60 loss 0.07913844287395477
+Rank 1 training batch 65 loss 0.047134898602962494
+Rank 1 training batch 70 loss 0.06710140407085419
+Rank 1 training batch 75 loss 0.038657352328300476
+Rank 1 training batch 80 loss 0.10742544382810593
+Rank 1 training batch 85 loss 0.05332313850522041
+Rank 1 training batch 90 loss 0.05230346694588661
+Rank 1 training batch 95 loss 0.07493288069963455
+Rank 1 training batch 100 loss 0.051513366401195526
+Rank 1 training batch 105 loss 0.058569639921188354
+Rank 1 training batch 110 loss 0.0304581169039011
+Rank 1 training batch 115 loss 0.02316390722990036
+Rank 1 training batch 120 loss 0.06878119707107544
+Rank 1 training batch 125 loss 0.07097896933555603
+Rank 1 training batch 130 loss 0.037231843918561935
+Rank 1 training batch 135 loss 0.07629267126321793
+Rank 1 training batch 140 loss 0.06207377836108208
+Rank 1 training batch 145 loss 0.04173561558127403
+Rank 1 training batch 150 loss 0.029357068240642548
+Rank 1 training batch 155 loss 0.05848954617977142
+Rank 1 training batch 160 loss 0.13459230959415436
+Rank 1 training batch 165 loss 0.08617086708545685
+Rank 1 training batch 170 loss 0.03582461550831795
+Rank 1 training batch 175 loss 0.038787104189395905
+Rank 1 training batch 180 loss 0.030208773910999298
+Rank 1 training batch 185 loss 0.04515961557626724
+Rank 1 training batch 190 loss 0.0750277116894722
+Rank 1 training batch 195 loss 0.08942825347185135
+Rank 1 training batch 200 loss 0.039871081709861755
+Rank 1 training batch 205 loss 0.035317737609148026
+Rank 1 training batch 210 loss 0.05541379377245903
+Rank 1 training batch 215 loss 0.05816517770290375
+Rank 1 training batch 220 loss 0.043021731078624725
+Rank 1 training batch 225 loss 0.05786485597491264
+Rank 1 training batch 230 loss 0.030487170442938805
+Rank 1 training batch 235 loss 0.07742235064506531
+Rank 1 training batch 240 loss 0.02078178897500038
+Rank 1 training batch 245 loss 0.06509744375944138
+Rank 1 training batch 250 loss 0.029588408768177032
+Rank 1 training batch 255 loss 0.036027632653713226
+Rank 1 training batch 260 loss 0.057338010519742966
+Rank 1 training batch 265 loss 0.06877338886260986
+Rank 1 training batch 270 loss 0.017884643748402596
+Rank 1 training batch 275 loss 0.036694545298814774
+Rank 1 training batch 280 loss 0.06931909918785095
+Rank 1 training batch 285 loss 0.0924055278301239
+Rank 1 training batch 290 loss 0.04841191694140434
+Rank 1 training batch 295 loss 0.07263412326574326
+Rank 1 training batch 300 loss 0.07983652502298355
+Rank 1 training batch 305 loss 0.06509478390216827
+Rank 1 training batch 310 loss 0.0472647063434124
+Rank 1 training batch 315 loss 0.040647730231285095
+Rank 1 training batch 320 loss 0.05413133278489113
+Rank 1 training batch 325 loss 0.05007832497358322
+Rank 1 training batch 330 loss 0.038647670298814774
+Rank 1 training batch 335 loss 0.04854841157793999
+Rank 1 training batch 340 loss 0.0578894317150116
+Rank 1 training batch 345 loss 0.02717406116425991
+Rank 1 training batch 350 loss 0.045301686972379684
+Rank 1 training batch 355 loss 0.06335458904504776
+Rank 1 training batch 360 loss 0.05449136719107628
+Rank 1 training batch 365 loss 0.019449636340141296
+Rank 1 training batch 370 loss 0.05972697213292122
+Rank 1 training batch 375 loss 0.0864035040140152
+Rank 1 training batch 380 loss 0.07186713069677353
+Rank 1 training batch 385 loss 0.03229746222496033
+Rank 1 training batch 390 loss 0.03757466375827789
+Rank 1 training batch 395 loss 0.03535477817058563
+Rank 1 training batch 400 loss 0.0277500469237566
+Rank 1 training batch 405 loss 0.08986224979162216
+Rank 1 training batch 410 loss 0.054924216121435165
+Rank 1 training batch 415 loss 0.02912624180316925
+Rank 1 training batch 420 loss 0.03918797895312309
+Rank 1 training batch 425 loss 0.04138684272766113
+Rank 1 training batch 430 loss 0.03579532727599144
+Rank 1 training batch 435 loss 0.0333024263381958
+Rank 1 training batch 440 loss 0.05332750454545021
+Rank 1 training batch 445 loss 0.0329497754573822
+Rank 1 training batch 450 loss 0.03455059230327606
+Rank 1 training batch 455 loss 0.03317832946777344
+Rank 1 training batch 460 loss 0.05475204065442085
+Rank 1 training batch 465 loss 0.054406289011240005
+Rank 1 training batch 470 loss 0.07315682619810104
+Rank 1 training batch 475 loss 0.03880961611866951
+Rank 1 training batch 480 loss 0.0231782253831625
+Rank 1 training batch 485 loss 0.03381991758942604
+Rank 1 training batch 490 loss 0.05955179035663605
+Rank 1 training batch 495 loss 0.025418832898139954
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Training complete!
+Getting accuracy....
+In-D accuracy...
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Accuracy 0.9625
+OOD accuracy...
+/Users/spandanmadan/federated_generalization
+/Users/spandanmadan/federated_generalization/./res/loader/loader.py
+/Users/spandanmadan/federated_generalization/./res/loader
+Accuracy 0.5946
+saving model
