@@ -20,5 +20,15 @@ Rank 2 training batch 5 loss 2.2615349292755127
 Rank 2 training batch 10 loss 2.1661484241485596
 Rank 2 training batch 15 loss 1.9448148012161255
 Rank 2 training batch 20 loss 1.9347797632217407
-onda3/envs/turing/lib/python3.8/multiprocessing/resource_tracker.py:216: UserWarning: resource_tracker: There appear to be 11 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
+Rank 2 training batch 25 loss 1.7928558588027954
+Rank 2 training batch 30 loss 1.722418189048767
+Rank 2 training batch 35 loss 1.611883521080017
+Rank 2 training batch 40 loss 1.7217040061950684
+Rank 2 training batch 45 loss 1.373323917388916
+Rank 2 training batch 50 loss 1.4443488121032715
+Rank 2 training batch 55 loss 1.3999711275100708
+Rank 2 training batch 60 loss 1.4023607969284058
+Rank 2 training batch 65 loss 1.3148183822631836
+Rank 2 training batch 70 loss 1.169141411781311
+Rank 2 training batch 75 loss 1.0055111646652222
+Rank 2 training batch 80 loss 1.1697770357131958

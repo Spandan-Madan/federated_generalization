@@ -95,12 +95,12 @@ shuffles = {'train':True,'val':True,'test':False}
 
 data_dir = '%s/data/'%CODE_ROOT
 #### Function to build different data loaders ####
-def build_loaders_for_dataset(DATASET_NAME):
+def build_loaders_for_dataset(DATASET_NAME,parsed_phases=['train','val']):
     file_lists = {}
     dsets = {}
     dset_loaders = {}
     dset_sizes = {}
-    for phase in ['train','val','test']:
+    for phase in parsed_phases:
         file_lists[phase] = "%s/%s_list_%s.txt"%(file_list_root,phase,DATASET_NAME)
         dsets[phase] = loader_new(file_lists[phase],att_path, image_transform, data_dir)
         dset_loaders[phase] = torch.utils.data.DataLoader(dsets[phase], batch_size=BATCH_SIZE, shuffle = shuffles[phase], num_workers=1,drop_last=True)
@@ -323,7 +323,7 @@ def get_accuracy(test_loader, model):
     print(f"Accuracy {correct_sum / len(test_loader.dataset)}", flush=True)
 
 
-def run_training_loop(net,rank, world_size, num_gpus, train_loader, test_loader, ood_test_loader, corruption_rate):
+def run_training_loop(net,rank, world_size, num_gpus, train_loader, test_loader, ood_test_loader, corruption_rate, corruption_ranks):
     # Runs the typical nueral network forward + backward + optimizer step, but
     # in a distributed fashion.
     # Build DistributedOptimizer.
@@ -359,7 +359,7 @@ def run_training_loop(net,rank, world_size, num_gpus, train_loader, test_loader,
             # Retrieve the gradients from the context.
             dist_autograd.get_gradients(context_id)
             '''
-            if random.random() < corruption_rate:
+            if random.random() < corruption_rate and rank in corruption_ranks:
                 # loss = loss/100
                 # print('using prev cid %s'%prev_cid)
                 param_rrefs = net.get_global_param_rrefs()
@@ -391,7 +391,7 @@ def run_training_loop(net,rank, world_size, num_gpus, train_loader, test_loader,
     get_accuracy(ood_test_loader ,net)
 
 # Main loop for trainers.
-def run_worker(rank, world_size, num_gpus, train_loader, test_loader, ood_test_loader, corruption_rate, num_epochs, model_save_name):
+def run_worker(rank, world_size, num_gpus, train_loader, test_loader, ood_test_loader, corruption_rate, corruption_ranks, num_epochs, model_save_name):
     print(f"Worker rank {rank} initializing RPC", flush=True)
 
     '''
@@ -413,7 +413,7 @@ def run_worker(rank, world_size, num_gpus, train_loader, test_loader, ood_test_l
     # net.save_trainer(save_name)
     for epoch_num in range(num_epochs):
         print('Starting Epoch:%s'%epoch_num, flush=True)
-        run_training_loop(net,rank, world_size, num_gpus, train_loader, test_loader, ood_test_loader, corruption_rate)
+        run_training_loop(net,rank, world_size, num_gpus, train_loader, test_loader, ood_test_loader, corruption_rate, corruption_ranks)
     print('saving model', flush=True)
     # net.save_trainer('/Users/spandanmadan/saved_models/%s_rank_%s.pt'%(model_save_name, rank))
     rpc.shutdown()
@@ -460,6 +460,12 @@ if __name__ == '__main__':
         won't be any corruption. Otherwise, each worker will have the corruption rate chance
         to drop the gradient update.""")
 
+    parser.add_argument(
+        "--corruption_ranks",
+        nargs='+',
+        default='1 2 3 4',
+        help="""List of ranks to corrupt by dropping updates.""")
+
     parser.add_argument('--dataset_names',
         nargs='+',
         help='list of datasets for models',
@@ -483,6 +489,9 @@ if __name__ == '__main__':
     os.environ['MASTER_ADDR'] = args.master_addr
     os.environ["MASTER_PORT"] = args.master_port
 
+    args.corruption_ranks = [int(i) for i in args.corruption_ranks]
+    print('Corrupting the following ranks:')
+    print(args.corruption_ranks)
 
     processes = []
     world_size = args.world_size
@@ -505,7 +514,7 @@ if __name__ == '__main__':
         print('Building OOD test data loader from %s'%OOD_DATASET_NAME, flush=True)
 
         rank_dset, rank_loaders, rank_dset_sizes = build_loaders_for_dataset(rank_dataset_name)
-        ood_rank_dset, ood_rank_loaders, ood_rank_dset_sizes = build_loaders_for_dataset(OOD_DATASET_NAME)
+        ood_rank_dset, ood_rank_loaders, ood_rank_dset_sizes = build_loaders_for_dataset(OOD_DATASET_NAME,['test'])
         train_loader, ind_test_loader = rank_loaders['train'], rank_loaders['val']
         ood_test_loader = ood_rank_loaders['test']
 
@@ -520,6 +529,7 @@ if __name__ == '__main__':
                 ind_test_loader,
                 ood_test_loader,
                 args.corruption_rate,
+                args.corruption_ranks,
                 args.num_epochs,
                 args.model_save_name))
         p.start()
